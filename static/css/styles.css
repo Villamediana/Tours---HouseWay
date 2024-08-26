@@ -1,0 +1,462 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #1c1c1e;
+    color: #f5f5f7;
+    overflow-x: hidden; /* Evita la barra de desplazamiento horizontal */
+}
+
+#main-container {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden; /* Evita que los elementos excedan el límite de la pantalla */
+}
+
+#content {
+    display: flex;
+    flex-grow: 1;
+    padding: 10px 15px; 
+    box-sizing: border-box;
+    overflow: hidden; /* Evita que los elementos se desborden fuera del contenedor */
+}
+
+#content-left {
+    width: 40%; /* Fija el ancho del contenedor izquierdo */
+    padding-right: 15px; 
+    border-right: 1px solid #3a3a3c; 
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    text-align: center;
+    padding-top: 20px;
+    overflow-y: auto; 
+    max-height: 100vh; 
+}
+
+#content-left h2 {
+    font-weight: 600;
+    color: #f5f5f7;
+    margin-bottom: 10px;
+}
+
+#content-left p {
+    color: #a1a1aa;
+    margin-bottom: 15px;
+}
+
+#uploadImageWrapper {
+    background-color: #5c6bc0; /* Color de fondo del botón */
+    color: #ffffff;
+    padding: 12px 25px;
+    font-size: 1em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    margin-right: 20px; /* Espacio entre el botón y la barra de búsqueda */
+}
+
+#uploadImageWrapper input[type="file"] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 10;
+}
+
+#uploadImageWrapper:hover {
+    background-color: #3949ab; /* Cambia a un azul más oscuro al pasar el mouse */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Texto que reemplaza el input de archivo */
+#uploadImageWrapper::before {
+    content: 'Escolher Arquivo';
+    color: #ffffff;
+    position: relative;
+    z-index: 2;
+}
+
+/*Miniaturas*/
+#thumbnail-container-wrapper {
+    display: flex;
+    justify-content: center; /* Centra las miniaturas horizontalmente */
+    align-items: center; /* Centra las miniaturas verticalmente */
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 0;
+    white-space: nowrap;
+    max-width: 100%;
+    box-sizing: border-box;
+    height: 100%; /* Asegura que el contenedor ocupe todo el espacio vertical */
+}
+
+#thumbnail-container {
+    display: flex;
+    gap: 15px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    padding: 0 10px; /* Añadir algo de espacio a los lados para que no esté pegado al borde */
+    align-items: center; /* Centra verticalmente las miniaturas dentro del contenedor */
+}
+
+.thumbnail-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 150px;
+    text-align: center;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0;
+}
+
+
+.thumbnail-wrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.thumbnail {
+    width: 100%;
+    height: 120px; /* Ajustar la altura de las miniaturas */
+    object-fit: cover;
+    cursor: pointer;
+    border: none;
+    transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Detalles de la miniatura (número e input) */
+.thumbnail-details {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Asegura que el número y el input estén cerca */
+    padding: 3px 5px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: -2px; /* Asegurar que esté alineado al borde inferior */
+    box-sizing: border-box;
+}
+
+.order-number {
+    font-weight: bold;
+    color: #000000;
+    margin-right: 2px; /* Reducir el espacio entre el número y el input */
+    flex-shrink: 0;
+}
+
+.name-input {
+    flex-grow: 1;
+    padding: 3px;
+    border-radius: 4px;
+    border: none;
+    background-color: transparent;
+    color: #000000;
+    font-size: 0.75em; /* Ajustar el tamaño del texto en el input */
+    outline: none;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.name-input::placeholder {
+    color: #a1a1aa;
+    font-size: 0.75em;
+}
+
+.name-input:focus {
+    box-shadow: none;
+}
+
+/* Botones de acción (eliminar) */
+.action-buttons {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.thumbnail-wrapper:hover .action-buttons {
+    opacity: 1;
+}
+
+.action-buttons button {
+    background: rgba(255, 0, 0, 0.8);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.action-buttons button:hover {
+    background: rgba(255, 0, 0, 1);
+    transform: scale(1.1);
+}
+
+/**/
+
+#search-and-upload-wrapper {
+    display: flex;
+    align-items: center; /* Asegura que estén alineados verticalmente */
+    margin-bottom: 15px; /* Espacio entre la barra de búsqueda + botón de carga y las miniaturas */
+}
+
+#search-bar-wrapper {
+    flex-grow: 1; /* Ocupa el espacio restante en la fila */
+}
+
+#searchBar {
+    width: 80%; /* Ancho de la barra de búsqueda */
+    padding: 10px 20px; /* Espaciado interno */
+    font-size: 1em;
+    border: 2px solid #ccc; /* Borde gris claro */
+    border-radius: 10px; /* Borde redondeado */
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    text-align: center; /* Centrado del texto */
+}
+
+#searchBar:focus {
+    border-color: #0a84ff; /* Cambia el borde al azul cuando está en foco */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+
+
+#viewer-container {
+    width: 60%; /* Asegura que el viewer ocupe el espacio restante */
+    padding-left: 15px; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    box-sizing: border-box;
+    overflow: hidden; /* Asegura que no haya scroll innecesario en el viewer */
+}
+
+
+#viewer {
+    width: 100%;
+    height: 90%;
+    background-color: #000;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    position: relative;
+}
+
+#define-angle-btn {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    padding: 10px 15px;
+    background-color: #0a84ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#define-angle-btn:hover {
+    background-color: #006fe0;
+}
+
+
+#placeholder-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #a1a1aa;
+    font-size: 1.2em;
+    text-align: center;
+}
+
+.panolens-container .panolens-control-bar {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Estilo para el footer */
+footer {
+    background-color: #2c2c2e;
+    padding: 10px 15px;
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.3);
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+#footer-left {
+    display: flex;
+    align-items: center;
+}
+
+#footer-left #logo,#footer-left a {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #f5f5f7;
+    text-decoration: none;
+}
+
+#footer-left #project-name {
+    color: #a1a1aa;
+    font-size: 1em;
+    margin-left: 5px;
+}
+/* Menú de opciones en el footer */
+#menu {
+    display: flex;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+#menu ul {
+    display: flex;
+    gap: 15px; /* Ajuste del espacio entre los elementos */
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#menu ul li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#menu ul li.active {
+    background-color: #f0f0f0; /* Blanco suave para el fondo del paso activo */
+    color: #333333; /* Texto gris oscuro en lugar de negro */
+    border: 2px solid transparent; /* Borde negro para el paso activo */
+}
+
+#menu ul li.completed {
+    border: 2px solid #28a745; /* Borde verde para pasos completados */
+    color: #f5f5f7; /* Mantener el color claro */
+}
+
+#menu ul li.completed img {
+    filter: none; /* Iconos en color completo */
+}
+
+#menu ul li span {
+    margin-top: 5px;
+    color: inherit;
+    font-size: 0.9em;
+}
+
+#menu ul li img {
+    width: 24px;
+    height: 24px;
+    filter: invert(85%); /* Mantener los iconos claros */
+}
+
+#menu ul li.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#menu ul li.disabled img {
+    filter: grayscale(100%);
+}
+
+#menu ul li a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+}
+
+#menu ul li.active a {
+    background-color: #f0f0f0; /* Blanco suave para el fondo del paso activo */
+    color: #333333; /* Texto gris oscuro */
+    border-radius: 8px;
+}
+
+
+
+/* Botones en el footer */
+#footer-right {
+    display: flex;
+    align-items: center;
+}
+
+#footer-right .btn, .btn-primary {
+    margin-left: 10px;
+    padding: 5px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+.btn {
+    background-color: #3a3a3c;
+    color: #f5f5f7;
+}
+
+.btn:hover {
+    background-color: #4a4a4c;
+}
+
+.btn-primary {
+    background-color: #0a84ff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #006fe0;
+}
+
+.notifyjs-corner .notifyjs-wrapper {
+    font-weight: normal; /* Asegura que el texto no esté en negrita */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Ajusta la fuente según tus necesidades */
+}

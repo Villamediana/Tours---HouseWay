@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tus Proyectos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/projects.css') }}">
+</head>
+<body>
+    <div id="header">
+        <h1>Tus Proyectos</h1>
+        <button id="create-project" class="btn-primary">Crear Nuevo Proyecto</button>
+    </div>
+    <div id="projects-container">
+    </div>
+    <script src="{{ url_for('static', filename='js/projects.js') }}"></script>
+</body>
+</html>

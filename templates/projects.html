@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HouseWay | Tour 360°</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/projects.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf/notyf.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/notyf/notyf.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                HouseWay
+                <h2>Tour 360°</h2>
+            </div>
+            <ul class="menu">
+                <li class="active"><img class="icon" src="{{ url_for('static', filename='icons/dashboard.png') }}" alt=""></li>
+                <li><img class="icon" src="{{ url_for('static', filename='icons/user.png') }}" alt=""></li>
+                <li><img class="icon" src="{{ url_for('static', filename='icons/config.png') }}" alt=""></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Meus tours</h1>
+                <input type="text" id="search-projects" placeholder="Buscar proyectos...">
+            </header>
+            <section class="projects" id="projects-container">
+                <!-- Replicar más tarjetas según necesidad -->
+            </section>
+        </main>
+        
+        
+        <aside class="right-sidebar dark">
+            <div class="form-container">
+                <h2 id="form-title">Novo projeto</h2>
+                <form id="create-project-form">
+                    <div class="form-group">
+                        <input type="text" id="project-name" name="project-name" placeholder="Nome do projeto" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="description" name="description" rows="3" placeholder="Descrição"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="latitude" name="latitude" placeholder="Latitude">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="longitude" name="longitude" placeholder="Longitude">
+                    </div>
+                    <div class="form-buttons">
+                        <button type="button" id="create-project-btn" class="btn-primary">Criar</button>
+                        <button type="button" id="clear-form-btn" class="btn-primary">Limpar</button>
+                    </div>                    
+                </form>
+            </div>
+        </aside>
+        
+          
+        <!--<aside class="right-sidebar">
+            <button id="createProjectBtn" class="btn-primary">Crear Proyecto</button>
+            <div class="calendar">
+                <h2>Thursday</h2>
+                <p>April 20, 2017</p>
+                <div class="date-picker">
+                </div>
+            </div>
+            <div class="tasks">
+                <h3>Due Today</h3>
+                <div class="task-list">
+                    <div class="task">Landing Page Design - Install WordPress</div>
+                    <div class="task">Landing Page Design - Custom Functionality</div>
+                </div>
+            </div>
+        </aside>-->
+    </div>
+    <script src="{{ url_for('static', filename='js/projectsnew.js') }}"></script>
+</body>
+</html>

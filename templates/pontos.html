@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Tour</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+</head>
+<body>
+    <div id="main-container">
+        <div id="content">
+            <div id="content-left">
+                <p>Para começar, importe suas fotos 360.</p>
+                <div id="search-and-upload-wrapper">
+                    <div id="uploadImageWrapper">
+                        <input type="file" id="uploadImage" />
+                    </div>
+                    <div id="search-bar-wrapper">
+                        <input type="text" id="searchBar" placeholder="Buscar ambientes..." disabled>
+                    </div>
+                </div>                
+                <div id="thumbnail-container-wrapper">
+                    <div id="thumbnail-container">
+                        <!-- Aquí se agregarán las miniaturas -->
+                    </div>
+                </div>
+            </div>
+            <div id="viewer-container">
+                <div id="viewer">
+                    <div id="placeholder-text">Seu Tour 360° será exibido aqui.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div id="footer-left">
+            <span id="logo">HouseWay Tour</span>
+            <span id="project-name">(Project 001)</span>
+        </div>
+        <div id="link-container"></div>
+        <div id="menu">
+            <ul>
+                <li class="completed"><a href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='icons/360.png') }}" alt="Ambientes"><span>Ambientes</span></a></li>
+                <li class="active"><a href="{{ url_for('pontos') }}"><img src="{{ url_for('static', filename='icons/pontos.png') }}" alt="Pontos"><span>Pontos</span></a></li>
+            </ul>
+        </div>
+        <div id="footer-right">
+            <button class="btn" id="cancel">Cancelar</button>
+            <button class="btn-primary" id="save">Salvar</button>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/three.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/panolens.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script> <!-- Archivo JS externo -->
+</body>
+</html>
