@@ -1,0 +1,65 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 736-927-583
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 736-927-583
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://103.199.185.54:5000
+[33mPress CTRL+C to quit[0m
+189.69.104.63 - - [19/Jan/2025 01:49:32] "GET / HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 01:49:32] "GET /static/css/projects.css HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 01:49:32] "GET /static/icons/dashboard.png HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 01:49:32] "GET /static/icons/user.png HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 01:49:32] "GET /static/icons/config.png HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 01:49:32] "GET /static/js/projectsnew.js HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 01:49:32] "GET /api/projects HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 01:49:33] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+189.69.104.63 - - [19/Jan/2025 01:57:43] "GET / HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 01:57:43] "[36mGET /static/css/projects.css HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 01:57:43] "[36mGET /static/icons/user.png HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 01:57:43] "[36mGET /static/icons/dashboard.png HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 01:57:43] "[36mGET /static/icons/config.png HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 01:57:43] "[36mGET /static/js/projectsnew.js HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 01:57:43] "GET /api/projects HTTP/1.1" 200 -
+35.167.2.215 - - [19/Jan/2025 01:58:39] "[33mPOST /plano_adquirido HTTP/1.1[0m" 404 -
+35.84.122.228 - - [19/Jan/2025 02:16:20] "[33mPOST /plano_adquirido HTTP/1.1[0m" 404 -
+189.69.104.63 - - [19/Jan/2025 02:16:27] "GET / HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 02:16:27] "[36mGET /static/css/projects.css HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:16:27] "[36mGET /static/icons/dashboard.png HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:16:27] "[36mGET /static/icons/user.png HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:16:27] "[36mGET /static/icons/config.png HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:16:27] "[36mGET /static/js/projectsnew.js HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:16:28] "GET /api/projects HTTP/1.1" 200 -
+167.99.206.230 - - [19/Jan/2025 02:23:22] "GET / HTTP/1.1" 200 -
+167.99.206.230 - - [19/Jan/2025 02:23:23] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://103.199.185.54:5000
+[33mPress CTRL+C to quit[0m
+189.69.104.63 - - [19/Jan/2025 02:23:43] "GET / HTTP/1.1" 200 -
+189.69.104.63 - - [19/Jan/2025 02:23:43] "[36mGET /static/css/projects.css HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:23:43] "[36mGET /static/icons/dashboard.png HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:23:43] "[36mGET /static/icons/user.png HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:23:43] "[36mGET /static/js/projectsnew.js HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:23:43] "[36mGET /static/icons/config.png HTTP/1.1[0m" 304 -
+189.69.104.63 - - [19/Jan/2025 02:23:43] "GET /api/projects HTTP/1.1" 200 -
+35.84.122.228 - - [19/Jan/2025 02:25:05] "POST /plano_adquirido HTTP/1.1" 200 -
+Datos recibidos: {'data': {'plan_valid_until': 'Até ser cancelado', 'plan_order_id': '0ca5d841-9c58-406c-9a02-8a3e4b5c9aee', 'context': {'metaSiteId': '6f69ad3b-c5fa-44ea-8d07-029ff5adcb7e', 'activationId': '41f531c6-1e78-49e0-86ec-f74bccf2f25a'}, '_context': {'activation': {'id': '41f531c6-1e78-49e0-86ec-f74bccf2f25a'}, 'configuration': {'id': '677bf74c-3806-4db7-8c8d-3299e5e5ab9a'}, 'app': {'id': '1522827f-c56c-a5c9-2ac9-00f9e6ae12d3'}, 'action': {'id': 'f45ef9b3-d624-4f76-b7bc-0f36ec817d65'}, 'trigger': {'key': 'wix_pricing_plans-plan_purchased'}}, 'plan_description': 'Ideal para corretores que querem experimentar a tecnologia de tours virtuais.', 'contact': {'name': {'first': 'Jose Miguel', 'last': 'Villamediana Osorio'}, 'email': 'jose.villamediana.osorio@gmail.com', 'emails': [{'id': 'bf4c1a7c-1ef2-4ac9-bf17-c7e609a9f7c8', 'tag': 'UNTAGGED', 'email': 'jose.villamediana.osorio@gmail.com', 'primary': True}], 'updatedDate': '2025-01-17T23:51:11.686Z', 'phone': '', 'createdDate': '2024-09-02T15:29:29.334Z'}, 'plan_id': 'bd653b5a-8ada-4b2b-8263-50668a66ea57', 'site_name': 'Houseway2', 'plan_title': 'Corretor - Stater', 'plan_price': {'value': '45.00', 'currency': 'BRL'}, 'plan_start_date': '18/01/25', 'contact_id': '2c7c2b79-dac9-4a89-a57c-9b05f15d07e5', 'plan_cycle_duration': '1 mês'}}
