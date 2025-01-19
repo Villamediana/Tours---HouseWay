@@ -16,16 +16,32 @@ def projects():
     return render_template('projects.html')
 
 
-
+# Ruta absoluta a la carpeta `static`
+STATIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+INFO_FILE = os.path.join(STATIC_FOLDER, 'info.json')
 
 #STARTEND WEBHOOKS ---------------------------
 @app.route('/plano_adquirido', methods=['POST'])
-def webhook():
-    data = request.json  # Recebe os dados enviados pelo webhook
-    print("Dados recebidos:", data)
-    # Aqui você pode processar os dados conforme necessário
-    return jsonify({'status': 'sucesso'}), 200
+def plano_adquirido():
+    data = request.json  # Recibe los datos enviados por el webhook
+    print("Datos recibidos:", data)
+    
+    # Guarda los datos en `info.json`
+    try:
+        with open(INFO_FILE, 'w', encoding='utf-8') as json_file:
+            json.dump(data, json_file, ensure_ascii=False, indent=4)
+        return jsonify({'status': 'sucesso'}), 200
+    except Exception as e:
+        print(f"Error al guardar el archivo JSON: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/plano_cancelado', methods=['POST'])
+def plano_cancelado():
+    data = request.json  # Recibe los datos enviados por el webhook
+    print("Datos recibidos:", data)
+    
+    # Puedes procesar los datos o guardarlos en otro archivo si es necesario
+    return jsonify({'status': 'sucesso'}), 200
 
 
 @app.route('/plano_cancelado', methods=['POST'])
