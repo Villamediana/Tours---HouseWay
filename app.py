@@ -15,7 +15,6 @@ if not os.path.exists(UPLOAD_FOLDER):
 def projects():
     return render_template('projects.html')
 
-
 # Ruta absoluta a la carpeta `static`
 STATIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 INFO_FILE = os.path.join(STATIC_FOLDER, 'info.json')
