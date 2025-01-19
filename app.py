@@ -15,6 +15,13 @@ if not os.path.exists(UPLOAD_FOLDER):
 def projects():
     return render_template('projects.html')
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    data = request.json  # Recebe os dados enviados pelo webhook
+    print("Dados recebidos:", data)
+    # Aqui você pode processar os dados conforme necessário
+    return jsonify({'status': 'sucesso'}), 200
+
 @app.route('/project/<project_name>')
 def load_project(project_name):
     return render_template('index.html', project_name=project_name)

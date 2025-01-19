@@ -1,0 +1,25 @@
+{
+    "project_name": "Residencial Luna",
+    "created_at": "2025-01-16 17:35:28",
+    "images": [
+        {
+            "room": "piscina",
+            "nameOriginal": "exterior.JPG",
+            "order": 1,
+            "path": "static/uploads/jvilla95/Residencial Luna/exterior.JPG"
+        },
+        {
+            "room": "casa",
+            "nameOriginal": "interno.JPG",
+            "order": 2,
+            "path": "static/uploads/jvilla95/Residencial Luna/interno.JPG"
+        },
+        {
+            "room": "varanda",
+            "nameOriginal": "varanda.JPG",
+            "order": 3,
+            "path": "static/uploads/jvilla95/Residencial Luna/varanda.JPG"
+        }
+    ],
+    "viewer_url": "http://127.0.0.1:5000/static/uploads/jvilla95/Residencial%20Luna/index.html"
+}
