@@ -15,24 +15,62 @@ if not os.path.exists(UPLOAD_FOLDER):
 def projects():
     return render_template('projects.html')
 
-# Ruta absoluta a la carpeta `static`
-STATIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-INFO_FILE = os.path.join(STATIC_FOLDER, 'info.json')
-
 #STARTEND WEBHOOKS ---------------------------
+# Ruta a la carpeta de usuarios
+USERS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'users')
+USERS_JSON = os.path.join(USERS_FOLDER, 'users.json')
+
+# Asegúrate de que la carpeta exista
+os.makedirs(USERS_FOLDER, exist_ok=True)
+
+# Inicializa el archivo users.json si no existe
+if not os.path.exists(USERS_JSON):
+    with open(USERS_JSON, 'w', encoding='utf-8') as file:
+        json.dump({}, file, ensure_ascii=False, indent=4)
+
 @app.route('/plano_adquirido', methods=['POST'])
 def plano_adquirido():
-    data = request.json  # Recibe los datos enviados por el webhook
-    print("Datos recibidos:", data)
-    
-    # Guarda los datos en `info.json`
     try:
-        with open(INFO_FILE, 'w', encoding='utf-8') as json_file:
-            json.dump(data, json_file, ensure_ascii=False, indent=4)
+        data = request.json  # Recibe los datos del webhook
+        email = data['data']['contact']['email']
+
+        # Crea un ID único basado en UUID
+        user_id = str(uuid.uuid4())
+
+        # Actualiza el archivo users.json
+        with open(USERS_JSON, 'r+', encoding='utf-8') as file:
+            users_data = json.load(file)
+            if email not in users_data:  # Solo añade si el email no existe
+                users_data[email] = user_id
+                file.seek(0)
+                json.dump(users_data, file, ensure_ascii=False, indent=4)
+                file.truncate()
+
+        # Crea una carpeta para el usuario
+        user_folder = os.path.join(USERS_FOLDER, user_id)
+        os.makedirs(user_folder, exist_ok=True)
+
+        # Datos para el archivo info_user.json
+        info_user_data = {
+            "first_name": data['data']['contact']['name']['first'],
+            "last_name": data['data']['contact']['name']['last'],
+            "email": email,
+            "plan_name": data['data']['plan_title'],
+            "plan_start_date": data['data']['plan_start_date']
+        }
+
+        # Crea el archivo info_user.json dentro de la carpeta del usuario
+        info_user_file = os.path.join(user_folder, 'info_user.json')
+        with open(info_user_file, 'w', encoding='utf-8') as file:
+            json.dump(info_user_data, file, ensure_ascii=False, indent=4)
+
         return jsonify({'status': 'sucesso'}), 200
+
     except Exception as e:
-        print(f"Error al guardar el archivo JSON: {e}")
+        print(f"Error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
 
 @app.route('/plano_cancelado', methods=['POST'])
 def plano_cancelado():
