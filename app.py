@@ -12,10 +12,10 @@ from flask_mail import Mail, Message
 app = Flask(__name__)
 # Configuración de Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
+app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'tu_correo@gmail.com'  # Cambia esto
-app.config['MAIL_PASSWORD'] = 'tu_contraseña'  # Cambia esto
+app.config['MAIL_USERNAME'] = 'houseway.noreply@gmail.com'  # Cambia esto
+app.config['MAIL_PASSWORD'] = 'dukh qmpv xoxy lvoh'  # Cambia esto
 mail = Mail(app)
 
 # Rutas de archivos y carpetas
@@ -105,7 +105,7 @@ def verificar_codigo():
         return render_template('verificar.html', email=email, error="El código es incorrecto.")
 
     # Redirigir al index tras autenticación exitosa
-    return redirect(url_for('projects.html'))
+    return redirect(url_for('projects'))
 
 
 # Reenviar código
@@ -246,17 +246,6 @@ def plano_adquirido():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
-
-
-@app.route('/plano_cancelado', methods=['POST'])
-def plano_cancelado():
-    data = request.json  # Recibe los datos enviados por el webhook
-    print("Datos recibidos:", data)
-    
-    # Puedes procesar los datos o guardarlos en otro archivo si es necesario
-    return jsonify({'status': 'sucesso'}), 200
-
-
 @app.route('/plano_cancelado', methods=['POST'])
 def webhook():
     data = request.json  # Recebe os dados enviados pelo webhook
@@ -272,8 +261,8 @@ def load_project(project_name):
 @app.route('/api/projects')
 def list_projects():
     projects = []
-    for project in os.listdir(UPLOAD_FOLDER):
-        project_path = os.path.join(UPLOAD_FOLDER, project)
+    for project in os.listdir(USERS_FOLDER):
+        project_path = os.path.join(USERS_FOLDER, project)
         if os.path.isdir(project_path):
             # Verificar si el archivo project_data.json existe
             json_path = os.path.join(project_path, 'metadata.json')
@@ -304,7 +293,7 @@ def create_project():
     description = data.get('description')
     latitude = data.get('latitude')
     longitude = data.get('longitude')
-    project_path = os.path.join(UPLOAD_FOLDER, project_name)
+    project_path = os.path.join(USERS_FOLDER, project_name)
 
     if not os.path.exists(project_path):
         os.makedirs(project_path)
@@ -332,7 +321,7 @@ def create_project():
 def delete_project():
     data = request.json
     project_name = data.get('name')
-    project_path = os.path.join(UPLOAD_FOLDER, project_name)
+    project_path = os.path.join(USERS_FOLDER, project_name)
 
     if os.path.exists(project_path):
         shutil.rmtree(project_path)  # Eliminar la carpeta del proyecto y su contenido
@@ -349,13 +338,13 @@ def update_project(project_name):
     longitude = data.get('longitude')
 
     # Ruta original del proyecto
-    original_project_path = os.path.join(UPLOAD_FOLDER, project_name)
+    original_project_path = os.path.join(USERS_FOLDER, project_name)
     
     if not os.path.exists(original_project_path):
         return jsonify(success=False, message="El proyecto no existe.")
 
     # Ruta con el nuevo nombre (si se cambia)
-    new_project_path = os.path.join(UPLOAD_FOLDER, new_name)
+    new_project_path = os.path.join(USERS_FOLDER, new_name)
 
     # Renombrar la carpeta si el nombre cambia
     if project_name != new_name:
@@ -389,7 +378,7 @@ def save_image():
         return jsonify(success=False, message="No folder name provided")
 
     # Concatenamos la ruta del usuario con el nombre del proyecto
-    folder_path = os.path.join(UPLOAD_FOLDER, project_name)
+    folder_path = os.path.join(USERS_FOLDER, project_name)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
