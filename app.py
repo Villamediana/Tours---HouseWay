@@ -17,6 +17,7 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'houseway.noreply@gmail.com'  # Cambia esto
 app.config['MAIL_PASSWORD'] = 'dukh qmpv xoxy lvoh'  # Cambia esto
+app.secret_key = '4cp0t12017'
 mail = Mail(app)
 
 # Rutas de archivos y carpetas
@@ -31,7 +32,19 @@ if not os.path.exists(USERS_JSON):
 
 @app.route('/')
 def projects():
-    return render_template('login.html')
+    from flask import session
+
+    if 'user_email' not in session:
+        return redirect(url_for('login'))
+
+    # Renderiza una vista de proyectos o dashboard
+    return render_template('index.html', user_email=session['user_email'])
+
+
+@app.route('/logout')
+def logout():
+    session.pop('user_email', None)
+    return redirect(url_for('login'))
 
 
 # Función para generar un código aleatorio
@@ -83,12 +96,13 @@ def login():
 
 
 # Página para verificar el código
+from flask import session
+
 @app.route('/verificar', methods=['POST'])
 def verificar_codigo():
     email = request.form.get('email')
     codigo_introducido = request.form.get('codigo')
 
-    # Cargar datos de users.json
     with open(USERS_JSON, 'r', encoding='utf-8') as file:
         users_data = json.load(file)
 
@@ -112,8 +126,11 @@ def verificar_codigo():
     if codigo_introducido != codigo_data['codigo']:
         return render_template('verificar.html', email=email, error="El código es incorrecto.")
 
-    # Redirigir al index tras autenticación exitosa
+    # Guarda el usuario en la sesión
+    session['user_email'] = email
+
     return redirect(url_for('projects'))
+
 
 
 # Reenviar código
