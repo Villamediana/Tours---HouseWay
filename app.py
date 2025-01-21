@@ -38,7 +38,7 @@ def projects():
         return redirect(url_for('login'))
 
     # Renderiza una vista de proyectos o dashboard
-    return render_template('index.html', user_email=session['user_email'])
+    return render_template('projects.html', user_email=session['user_email'])
 
 
 @app.route('/logout')
