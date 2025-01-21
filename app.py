@@ -155,18 +155,65 @@ def visitante_inscrito():
     try:
         data = request.json  # Recibe los datos del webhook
 
-        # Guarda directamente los datos recibidos en un archivo JSON
-        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-        log_file = os.path.join(USERS_FOLDER, f'inscrito_{timestamp}.json')
+        # Extraer los datos necesarios
+        contact = data.get('data', {}).get('contact', {})
+        email = contact.get('email')
+        first_name = contact.get('name', {}).get('first', "N/A")  # Algunos nombres pueden no venir
+        last_name = contact.get('name', {}).get('last', "N/A")
+        phone = contact.get('phone', "N/A")
+        created_date = contact.get('createdDate', "N/A")
 
-        with open(log_file, 'w', encoding='utf-8') as file:
-            json.dump(data, file, ensure_ascii=False, indent=4)
+        # Datos para el archivo info_user.json
+        info_user_data = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "phone": phone,
+            "plan_name": "teste",
+            "plan_start_date": created_date
+        }
+
+        if not email:
+            return jsonify({'status': 'error', 'message': 'El email es obligatorio.'}), 400
+
+        # Actualiza o crea el archivo users.json
+        with open(USERS_JSON, 'r+', encoding='utf-8') as file:
+            try:
+                users_data = json.load(file)
+            except json.JSONDecodeError:
+                users_data = {}
+
+            if email not in users_data:  # Si el correo no existe
+                user_id = str(uuid.uuid4())  # Genera un ID único
+                users_data[email] = user_id
+
+                # Crear carpeta y archivo info_user.json
+                user_folder = os.path.join(USERS_FOLDER, user_id)
+                os.makedirs(user_folder, exist_ok=True)
+
+                info_user_file = os.path.join(user_folder, 'info_user.json')
+                with open(info_user_file, 'w', encoding='utf-8') as user_file:
+                    json.dump(info_user_data, user_file, ensure_ascii=False, indent=4)
+            else:  # Si el correo ya existe
+                user_id = users_data[email]
+
+                # Actualizar info_user.json existente
+                user_folder = os.path.join(USERS_FOLDER, user_id)
+                info_user_file = os.path.join(user_folder, 'info_user.json')
+                with open(info_user_file, 'w', encoding='utf-8') as user_file:
+                    json.dump(info_user_data, user_file, ensure_ascii=False, indent=4)
+
+            # Guarda los cambios en users.json
+            file.seek(0)
+            json.dump(users_data, file, ensure_ascii=False, indent=4)
+            file.truncate()
 
         return jsonify({'status': 'sucesso'}), 200
 
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 
 
