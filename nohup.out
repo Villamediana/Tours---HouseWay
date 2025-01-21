@@ -176,3 +176,15 @@ ModuleNotFoundError: No module named 'flask_mail'
 54.212.48.139 - - [21/Jan/2025 01:06:19] "[35m[1mPOST /inscrito HTTP/1.1[0m" 500 -
 189.69.104.63 - - [21/Jan/2025 01:07:08] "GET / HTTP/1.1" 200 -
 Error: 'contact'
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://103.199.185.54:5000
+[33mPress CTRL+C to quit[0m
+189.69.104.63 - - [21/Jan/2025 01:35:30] "GET / HTTP/1.1" 200 -
+189.69.104.63 - - [21/Jan/2025 01:36:51] "GET / HTTP/1.1" 200 -
+/root/Tours---HouseWay/app.py:159: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+189.69.104.63 - - [21/Jan/2025 01:37:02] "POST /inscrito HTTP/1.1" 200 -
