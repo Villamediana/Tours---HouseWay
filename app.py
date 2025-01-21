@@ -12,8 +12,9 @@ from flask_mail import Mail, Message
 app = Flask(__name__)
 # Configuración de Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
+app.config['MAIL_PORT'] = 587  # Para STARTTLS
 app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'houseway.noreply@gmail.com'  # Cambia esto
 app.config['MAIL_PASSWORD'] = 'dukh qmpv xoxy lvoh'  # Cambia esto
 mail = Mail(app)
