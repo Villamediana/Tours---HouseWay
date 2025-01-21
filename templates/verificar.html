@@ -1,25 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verificar Código</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        p {
+            margin-top: 15px;
+        }
+        .error {
+            color: red;
+            margin-bottom: 10px;
+        }
+        .mensaje {
+            color: green;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Verifica tu código</h1>
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
-    {% if mensaje %}
-        <p style="color: green;">{{ mensaje }}</p>
-    {% endif %}
-    <form method="POST" action="/verificar">
-        <input type="hidden" name="email" value="{{ email }}">
-        <label for="codigo">Código:</label>
-        <input type="text" name="codigo" required maxlength="6">
-        <button type="submit">Verificar</button>
-    </form>
-    <form method="POST" action="/reenviar">
-        <input type="hidden" name="email" value="{{ email }}">
-        <button type="submit">Reenviar código</button>
-    </form>
+    <div class="container">
+        <h1>Verifica tu código</h1>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        {% if mensaje %}
+            <p class="mensaje">{{ mensaje }}</p>
+        {% endif %}
+        <form method="POST" action="/verificar">
+            <input type="hidden" name="email" value="{{ email }}">
+            <input type="text" name="codigo" placeholder="Introduce tu código" required maxlength="6">
+            <button type="submit">Verificar</button>
+        </form>
+        <form method="POST" action="/reenviar">
+            <input type="hidden" name="email" value="{{ email }}">
+            <button type="submit">Reenviar código</button>
+        </form>
+    </div>
 </body>
 </html>
