@@ -47,8 +47,14 @@ def login():
             return render_template('login.html', error="Por favor, introduce un correo válido.")
 
         # Cargar datos de users.json
-        with open(USERS_JSON, 'r', encoding='utf-8') as file:
-            users_data = json.load(file)
+        try:
+            with open(USERS_JSON, 'r', encoding='utf-8') as file:
+                try:
+                    users_data = json.load(file)
+                except json.JSONDecodeError:
+                    users_data = {}
+        except FileNotFoundError:
+            users_data = {}
 
         if email not in users_data:
             return render_template('login.html', error="No hay una cuenta asociada a este correo.",
@@ -72,6 +78,7 @@ def login():
         return render_template('verificar.html', email=email)
 
     return render_template('login.html')
+
 
 
 # Página para verificar el código

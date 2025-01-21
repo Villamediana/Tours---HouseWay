@@ -66,6 +66,18 @@
             margin-bottom: 10px;
         }
     </style>
+    <script>
+        function validarFormulario(event) {
+            const emailInput = document.querySelector('input[name="email"]');
+            const email = emailInput.value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailRegex.test(email)) {
+                event.preventDefault();
+                alert("Por favor, introduce un correo electrónico válido.");
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -73,7 +85,7 @@
         {% if error %}
             <p class="error">{{ error }}</p>
         {% endif %}
-        <form method="POST">
+        <form method="POST" action="/login" onsubmit="validarFormulario(event)">
             <input type="email" name="email" placeholder="Correo electrónico" required>
             <button type="submit">Siguiente</button>
         </form>
