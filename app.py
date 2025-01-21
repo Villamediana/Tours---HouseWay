@@ -58,7 +58,7 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         if not email:
-            return render_template('login.html', error="Por favor, introduce un correo válido.")
+            return render_template('login.html', error="Por favor, digite um e-mail valido.")
 
         # Cargar datos de users.json
         try:
@@ -71,7 +71,7 @@ def login():
             users_data = {}
 
         if email not in users_data:
-            return render_template('login.html', error="No hay una cuenta asociada a este correo.",
+            return render_template('login.html', error="Não existe nenhuma conta com esse e-mail.",
                                    registro_url="https://joyceemiguel.wixstudio.com/houseway2/members-area/my/my-account")
 
         # Generar y enviar código al correo
@@ -87,7 +87,7 @@ def login():
             json.dump(codigo_data, code_file, ensure_ascii=False, indent=4)
 
         # Enviar correo
-        enviar_correo(email, "Tu código de inicio de sesión", f"Tu código es: {codigo}")
+        enviar_correo(email, "Seu codigo para fazer login", f"Seu codigo é: {codigo}")
 
         return render_template('verificar.html', email=email)
 
@@ -107,24 +107,24 @@ def verificar_codigo():
         users_data = json.load(file)
 
     if email not in users_data:
-        return render_template('login.html', error="Correo no encontrado.")
+        return render_template('login.html', error="Email não cadastrado.")
 
     user_id = users_data[email]
     user_folder = os.path.join(USERS_FOLDER, user_id)
     codigo_file = os.path.join(user_folder, 'codigo.json')
 
     if not os.path.exists(codigo_file):
-        return render_template('verificar.html', email=email, error="Código no encontrado. Solicita uno nuevo.")
+        return render_template('verificar.html', email=email, error="Codigo não encontrado. Solicite um novo codigo.")
 
     with open(codigo_file, 'r', encoding='utf-8') as file:
         codigo_data = json.load(file)
 
     expiracion = datetime.fromisoformat(codigo_data['expiracion'])
     if datetime.utcnow() > expiracion:
-        return render_template('verificar.html', email=email, error="El código ha expirado. Solicita uno nuevo.")
+        return render_template('verificar.html', email=email, error="O codigo expirou. Solicite um novo.")
 
     if codigo_introducido != codigo_data['codigo']:
-        return render_template('verificar.html', email=email, error="El código es incorrecto.")
+        return render_template('verificar.html', email=email, error="O codigo é incorreto.")
 
     # Guarda el usuario en la sesión
     session['user_email'] = email
@@ -143,7 +143,7 @@ def reenviar_codigo():
         users_data = json.load(file)
 
     if email not in users_data:
-        return render_template('login.html', error="Correo no encontrado.")
+        return render_template('login.html', error="Email não cadastrado.")
 
     user_id = users_data[email]
     user_folder = os.path.join(USERS_FOLDER, user_id)
@@ -157,8 +157,8 @@ def reenviar_codigo():
     with open(os.path.join(user_folder, 'codigo.json'), 'w', encoding='utf-8') as code_file:
         json.dump(codigo_data, code_file, ensure_ascii=False, indent=4)
 
-    enviar_correo(email, "Tu nuevo código de inicio de sesión", f"Tu código es: {codigo}")
-    return render_template('verificar.html', email=email, mensaje="Se ha enviado un nuevo código a tu correo.")
+    enviar_correo(email, "Seu codigo para fazer login", f"Seu codigo é: {codigo}")
+    return render_template('verificar.html', email=email, mensaje="Você recebeu um novo código no seu e-mail.")
 
 
 # Función para enviar correos
@@ -192,7 +192,7 @@ def visitante_inscrito():
         }
 
         if not email:
-            return jsonify({'status': 'error', 'message': 'El email es obligatorio.'}), 400
+            return jsonify({'status': 'error', 'message': 'O e-mail é obrigatorio.'}), 400
 
         # Actualiza o crea el archivo users.json
         with open(USERS_JSON, 'r+', encoding='utf-8') as file:
@@ -319,7 +319,7 @@ def list_projects():
                             "viewer_url": project_data.get("viewer_url", "")
                         })
                 except Exception as e:
-                    print(f"Error al leer el archivo JSON para el proyecto {project}: {str(e)}")
+                    print(f"Erro na leitura do JSON para o projeto {project}: {str(e)}")
     
     return jsonify(projects)
 
@@ -354,7 +354,7 @@ def create_project():
 
         return jsonify(success=True)
     else:
-        return jsonify(success=False, message="El proyecto ya existe.")
+        return jsonify(success=False, message="O projeto ja existe.")
   
 
 @app.route('/api/delete-project', methods=['POST'])
@@ -367,7 +367,7 @@ def delete_project():
         shutil.rmtree(project_path)  # Eliminar la carpeta del proyecto y su contenido
         return jsonify(success=True)
     else:
-        return jsonify(success=False, message="El proyecto no existe.")
+        return jsonify(success=False, message="O projeto não existe.")
 
 @app.route('/api/update-project/<project_name>', methods=['POST'])
 def update_project(project_name):
@@ -381,7 +381,7 @@ def update_project(project_name):
     original_project_path = os.path.join(USERS_FOLDER, project_name)
     
     if not os.path.exists(original_project_path):
-        return jsonify(success=False, message="El proyecto no existe.")
+        return jsonify(success=False, message="O projeto não existe.")
 
     # Ruta con el nuevo nombre (si se cambia)
     new_project_path = os.path.join(USERS_FOLDER, new_name)
@@ -408,7 +408,7 @@ def update_project(project_name):
     with open(json_path, 'w') as json_file:
         json.dump(project_data, json_file, indent=4)
 
-    return jsonify(success=True, message="Proyecto actualizado correctamente.")
+    return jsonify(success=True, message="Projeto atualizado corretamente.")
 
 
 @app.route('/save-image', methods=['POST'])
