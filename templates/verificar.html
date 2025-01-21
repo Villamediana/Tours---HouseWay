@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verificar Código</title>
+</head>
+<body>
+    <h1>Verifica tu código</h1>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    {% if mensaje %}
+        <p style="color: green;">{{ mensaje }}</p>
+    {% endif %}
+    <form method="POST" action="/verificar">
+        <input type="hidden" name="email" value="{{ email }}">
+        <label for="codigo">Código:</label>
+        <input type="text" name="codigo" required maxlength="6">
+        <button type="submit">Verificar</button>
+    </form>
+    <form method="POST" action="/reenviar">
+        <input type="hidden" name="email" value="{{ email }}">
+        <button type="submit">Reenviar código</button>
+    </form>
+</body>
+</html>

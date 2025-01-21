@@ -1,55 +1,205 @@
-from flask import Flask, request, jsonify, render_template, url_for, redirect
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import shutil
 import uuid
+import random
+import string
+from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask_mail import Mail, Message
+
 
 app = Flask(__name__)
+# Configuración de Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'tu_correo@gmail.com'  # Cambia esto
+app.config['MAIL_PASSWORD'] = 'tu_contraseña'  # Cambia esto
+mail = Mail(app)
 
-# Ruta de la carpeta principal de uploads
-UPLOAD_FOLDER = 'static/uploads/jvilla95'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-@app.route('/')
-def projects():
-    return render_template('projects.html')
-
-#STARTEND WEBHOOKS ---------------------------
-# Ruta a la carpeta de usuarios
+# Rutas de archivos y carpetas
 USERS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'users')
 USERS_JSON = os.path.join(USERS_FOLDER, 'users.json')
-
-# Asegúrate de que la carpeta exista
 os.makedirs(USERS_FOLDER, exist_ok=True)
 
-# Inicializa el archivo users.json si no existe
 if not os.path.exists(USERS_JSON):
     with open(USERS_JSON, 'w', encoding='utf-8') as file:
         json.dump({}, file, ensure_ascii=False, indent=4)
+
+
+@app.route('/')
+def projects():
+    return render_template('login.html')
+
+
+# Función para generar un código aleatorio
+def generar_codigo():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
+# Página de login
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        if not email:
+            return render_template('login.html', error="Por favor, introduce un correo válido.")
+
+        # Cargar datos de users.json
+        with open(USERS_JSON, 'r', encoding='utf-8') as file:
+            users_data = json.load(file)
+
+        if email not in users_data:
+            return render_template('login.html', error="No hay una cuenta asociada a este correo.",
+                                   registro_url="https://joyceemiguel.wixstudio.com/houseway2/members-area/my/my-account")
+
+        # Generar y enviar código al correo
+        user_id = users_data[email]
+        user_folder = os.path.join(USERS_FOLDER, user_id)
+        os.makedirs(user_folder, exist_ok=True)
+
+        codigo = generar_codigo()
+        expiracion = datetime.utcnow() + timedelta(minutes=5)
+        codigo_data = {"codigo": codigo, "expiracion": expiracion.isoformat()}
+
+        with open(os.path.join(user_folder, 'codigo.json'), 'w', encoding='utf-8') as code_file:
+            json.dump(codigo_data, code_file, ensure_ascii=False, indent=4)
+
+        # Enviar correo
+        enviar_correo(email, "Tu código de inicio de sesión", f"Tu código es: {codigo}")
+
+        return render_template('verificar.html', email=email)
+
+    return render_template('login.html')
+
+
+# Página para verificar el código
+@app.route('/verificar', methods=['POST'])
+def verificar_codigo():
+    email = request.form.get('email')
+    codigo_introducido = request.form.get('codigo')
+
+    # Cargar datos de users.json
+    with open(USERS_JSON, 'r', encoding='utf-8') as file:
+        users_data = json.load(file)
+
+    if email not in users_data:
+        return render_template('login.html', error="Correo no encontrado.")
+
+    user_id = users_data[email]
+    user_folder = os.path.join(USERS_FOLDER, user_id)
+    codigo_file = os.path.join(user_folder, 'codigo.json')
+
+    if not os.path.exists(codigo_file):
+        return render_template('verificar.html', email=email, error="Código no encontrado. Solicita uno nuevo.")
+
+    with open(codigo_file, 'r', encoding='utf-8') as file:
+        codigo_data = json.load(file)
+
+    expiracion = datetime.fromisoformat(codigo_data['expiracion'])
+    if datetime.utcnow() > expiracion:
+        return render_template('verificar.html', email=email, error="El código ha expirado. Solicita uno nuevo.")
+
+    if codigo_introducido != codigo_data['codigo']:
+        return render_template('verificar.html', email=email, error="El código es incorrecto.")
+
+    # Redirigir al index tras autenticación exitosa
+    return redirect(url_for('projects.html'))
+
+
+# Reenviar código
+@app.route('/reenviar', methods=['POST'])
+def reenviar_codigo():
+    email = request.form.get('email')
+
+    # Cargar datos de users.json
+    with open(USERS_JSON, 'r', encoding='utf-8') as file:
+        users_data = json.load(file)
+
+    if email not in users_data:
+        return render_template('login.html', error="Correo no encontrado.")
+
+    user_id = users_data[email]
+    user_folder = os.path.join(USERS_FOLDER, user_id)
+    os.makedirs(user_folder, exist_ok=True)
+
+    # Generar y enviar nuevo código
+    codigo = generar_codigo()
+    expiracion = datetime.utcnow() + timedelta(minutes=5)
+    codigo_data = {"codigo": codigo, "expiracion": expiracion.isoformat()}
+
+    with open(os.path.join(user_folder, 'codigo.json'), 'w', encoding='utf-8') as code_file:
+        json.dump(codigo_data, code_file, ensure_ascii=False, indent=4)
+
+    enviar_correo(email, "Tu nuevo código de inicio de sesión", f"Tu código es: {codigo}")
+    return render_template('verificar.html', email=email, mensaje="Se ha enviado un nuevo código a tu correo.")
+
+
+# Función para enviar correos
+def enviar_correo(destinatario, asunto, cuerpo):
+    msg = Message(asunto, sender=app.config['MAIL_USERNAME'], recipients=[destinatario])
+    msg.body = cuerpo
+    mail.send(msg)
+
+#STARTEND WEBHOOKS ---------------------------
+@app.route('/inscrito', methods=['POST'])
+def visitante_inscrito():
+    try:
+        data = request.json  # Recibe los datos del webhook
+        email = data['contact']['email']
+        created_date = data['contact']['createdDate']
+
+        # Datos para el archivo info_user.json
+        info_user_data = {
+            "first_name": data['contact']['name']['first'],
+            "last_name": data['contact']['name']['last'],
+            "email": email,
+            "plan_name": "teste",
+            "plan_start_date": created_date
+        }
+
+        # Actualiza o crea el archivo users.json
+        with open(USERS_JSON, 'r+', encoding='utf-8') as file:
+            users_data = json.load(file)
+
+            if email not in users_data:  # Si el correo no existe
+                user_id = str(uuid.uuid4())  # Genera un ID único
+                users_data[email] = user_id
+
+                # Crear carpeta y archivo info_user.json
+                user_folder = os.path.join(USERS_FOLDER, user_id)
+                os.makedirs(user_folder, exist_ok=True)
+
+                info_user_file = os.path.join(user_folder, 'info_user.json')
+                with open(info_user_file, 'w', encoding='utf-8') as user_file:
+                    json.dump(info_user_data, user_file, ensure_ascii=False, indent=4)
+            else:  # Si el correo ya existe
+                user_id = users_data[email]
+
+                # Actualizar info_user.json existente
+                user_folder = os.path.join(USERS_FOLDER, user_id)
+                info_user_file = os.path.join(user_folder, 'info_user.json')
+                with open(info_user_file, 'w', encoding='utf-8') as user_file:
+                    json.dump(info_user_data, user_file, ensure_ascii=False, indent=4)
+
+            # Guarda los cambios en users.json
+            file.seek(0)
+            json.dump(users_data, file, ensure_ascii=False, indent=4)
+            file.truncate()
+
+        return jsonify({'status': 'sucesso'}), 200
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 @app.route('/plano_adquirido', methods=['POST'])
 def plano_adquirido():
     try:
         data = request.json  # Recibe los datos del webhook
         email = data['data']['contact']['email']
-
-        # Crea un ID único basado en UUID
-        user_id = str(uuid.uuid4())
-
-        # Actualiza el archivo users.json
-        with open(USERS_JSON, 'r+', encoding='utf-8') as file:
-            users_data = json.load(file)
-            if email not in users_data:  # Solo añade si el email no existe
-                users_data[email] = user_id
-                file.seek(0)
-                json.dump(users_data, file, ensure_ascii=False, indent=4)
-                file.truncate()
-
-        # Crea una carpeta para el usuario
-        user_folder = os.path.join(USERS_FOLDER, user_id)
-        os.makedirs(user_folder, exist_ok=True)
 
         # Datos para el archivo info_user.json
         info_user_data = {
@@ -60,16 +210,41 @@ def plano_adquirido():
             "plan_start_date": data['data']['plan_start_date']
         }
 
-        # Crea el archivo info_user.json dentro de la carpeta del usuario
-        info_user_file = os.path.join(user_folder, 'info_user.json')
-        with open(info_user_file, 'w', encoding='utf-8') as file:
-            json.dump(info_user_data, file, ensure_ascii=False, indent=4)
+        # Actualiza o crea el archivo users.json
+        with open(USERS_JSON, 'r+', encoding='utf-8') as file:
+            users_data = json.load(file)
+
+            if email not in users_data:  # Si el correo no existe
+                user_id = str(uuid.uuid4())  # Genera un ID único
+                users_data[email] = user_id
+
+                # Crear carpeta y archivo info_user.json
+                user_folder = os.path.join(USERS_FOLDER, user_id)
+                os.makedirs(user_folder, exist_ok=True)
+
+                info_user_file = os.path.join(user_folder, 'info_user.json')
+                with open(info_user_file, 'w', encoding='utf-8') as user_file:
+                    json.dump(info_user_data, user_file, ensure_ascii=False, indent=4)
+            else:  # Si el correo ya existe
+                user_id = users_data[email]
+
+                # Actualizar info_user.json existente
+                user_folder = os.path.join(USERS_FOLDER, user_id)
+                info_user_file = os.path.join(user_folder, 'info_user.json')
+                with open(info_user_file, 'w', encoding='utf-8') as user_file:
+                    json.dump(info_user_data, user_file, ensure_ascii=False, indent=4)
+
+            # Guarda los cambios en users.json
+            file.seek(0)
+            json.dump(users_data, file, ensure_ascii=False, indent=4)
+            file.truncate()
 
         return jsonify({'status': 'sucesso'}), 200
 
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 
 
@@ -89,9 +264,6 @@ def webhook():
     # Aqui você pode processar os dados conforme necessário
     return jsonify({'status': 'sucesso'}), 200
 #END WEBHOOKS ---------------------------
-
-
-
 
 @app.route('/project/<project_name>')
 def load_project(project_name):

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <h1>Iniciar sesión</h1>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <form method="POST">
+        <label for="email">Correo electrónico:</label>
+        <input type="email" name="email" required>
+        <button type="submit">Siguiente</button>
+    </form>
+    {% if registro_url %}
+        <p>No tienes una cuenta? <a href="{{ registro_url }}">Regístrate aquí</a></p>
+    {% endif %}
+</body>
+</html>
