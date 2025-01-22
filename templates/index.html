@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 
 <head>
     <meta charset="UTF-8">
@@ -7,17 +7,19 @@
     <title>Virtual Tour</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf/notyf.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js/minified/introjs.min.css">
+
     <script src="https://cdn.jsdelivr.net/npm/notyf/notyf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
-
+    <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
 </head>
 
 <body>
     <div id="main-container">
         <div id="content">
-            <div id="content-left">
-                <p>Para comenzar, importe sus fotos 360°</p>
+            <div id="content-left" data-intro="Aqui você importa suas fotos 360°, se tornando ambientes." data-step="1">
+                <p>Para começar, importe suas fotos 360°</p>
 
                 <div id="search-and-upload-wrapper">
                     <div id="uploadImageWrapper">
@@ -28,39 +30,47 @@
                     </div>
                 </div>
 
-                <div id="thumbnail-container-wrapper">
+                <div id="thumbnail-container-wrapper" data-intro="As miniaturas das imagens carregadas aparecerão aqui."
+                    data-step="2">
                     <div id="thumbnail-container">
-                        <!-- Aquí se agregarán las miniaturas -->
+                        <!-- Miniaturas dinâmicas -->
                     </div>
                 </div>
-
             </div>
-            <div id="viewer-container">
+
+            <div id="viewer-container" data-intro="Este é o visualizador onde você pode explorar seu Tour 360°."
+                data-step="3">
                 <div id="viewer">
-                    <div id="placeholder-text">Su Tour 360° será exhibido aquí.</div>
-                </div>                  
+                    <div id="placeholder-text">Seu Tour 360° será exibido aqui.</div>
+                </div>
                 <div>
-                    <button id="setAngleButton">📐</button>
+                    <button id="setAngleButton" data-intro="Aqui você define o zoom e angulo da imagem no tour."
+                        data-step="4">📐</button>
                 </div>
             </div>
         </div>
     </div>
     <footer>
-        <div id="footer-left">
+        <div id="footer-left" data-intro="Apos guardar, o nome do projeto se torna o link separado do visualizador."
+            data-step="5">
             <span id="logo"><a href="/">HouseWay Tour |</a></span>
             <span id="project-name">{{ project_name }}</span>
         </div>
         <div id="link-container"></div>
         <div id="menu">
             <ul>
-                <li class="active"><img src="{{ url_for('static', filename='icons/360.png') }}"
-                        alt="Ambientes"><span>Ambientes</span></li>
-                <li class=""><img src="{{ url_for('static', filename='icons/conect.png') }}"
-                        alt="Pontos"><span>Conexão</span></li>
-                <li class=""><img src="{{ url_for('static', filename='icons/info.png') }}"
-                        alt="Pontos"><span>Info</span></li>
-                <li class=""><img src="{{ url_for('static', filename='icons/link.png') }}"
-                        alt="Pontos"><span>URL</span></li>
+                <li class="active">
+                    <img src="{{ url_for('static', filename='icons/360.png') }}" alt="Ambientes"><span>Ambientes</span>
+                </li>
+                <li>
+                    <img src="{{ url_for('static', filename='icons/conect.png') }}" alt="Conexão"><span>Conexão</span>
+                </li>
+                <li>
+                    <img src="{{ url_for('static', filename='icons/info.png') }}" alt="Informações"><span>Info</span>
+                </li>
+                <li>
+                    <img src="{{ url_for('static', filename='icons/link.png') }}" alt="URL"><span>URL</span>
+                </li>
             </ul>
         </div>
         <div id="footer-right">
@@ -72,14 +82,60 @@
     <script>
         const PROJECT_NAME = "{{ project_name }}";
     </script>
-    <!--
-    <script src="{{ url_for('static', filename='js/three.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/panolens.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/marzipano.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bowser.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/screenfull.js') }}"></script>
-    -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script> <!-- Archivo JS externo -->
+
+    <!-- Script para inicializar o tutorial -->
+    <script>
+        document.getElementById("cancel").addEventListener("click", () => {
+            // Pregunta al usuario si quiere guardar antes de salir
+            const confirmSave = confirm("Você quer salvar antes de sair?");
+
+            if (confirmSave) {
+                // Simula el clic en el botón Guardar
+                document.getElementById("save").click();
+                window.location.href = "/";
+            } else {
+                // Redirige a la página principal
+                window.location.href = "/";
+            }
+        });
+
+
+
+        // Inicializa o tutorial interativo
+        document.addEventListener("DOMContentLoaded", () => {
+            // Verifica se o tutorial já foi completado
+            const hasCompletedTutorial = localStorage.getItem("tutorialCompleted");
+
+            // Inicia automaticamente caso não tenha sido completado
+            if (!hasCompletedTutorial) {
+                startTutorial();
+                localStorage.setItem("tutorialCompleted", "true"); // Marca como completo
+            }
+        });
+
+        // Função para iniciar o tutorial
+        function startTutorial() {
+            introJs()
+                .setOptions({
+                    nextLabel: "Próximo",
+                    prevLabel: "Anterior",
+                    skipLabel: "x", // Ícone para fechar
+                    doneLabel: "Concluir"
+                })
+                .start();
+        }
+    </script>
+    <style>
+        /* Estilo do texto nos tooltips */
+        .introjs-tooltiptext {
+            color: #000 !important;
+            font-size: 16px !important;
+            line-height: 1.5 !important;
+            font-family: 'Nunito', sans-serif !important;
+            text-align: center !important;
+        }
+    </style>
 </body>
 
 </html>

@@ -1,31 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HouseWay | Tour 360°</title>
+    
+    <!-- Estilos -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/projects.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf/notyf.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/notyf/notyf.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js/minified/introjs.min.css">
 
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/notyf/notyf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <aside class="sidebar">
+        <!-- Menu lateral -->
+        <aside class="sidebar" data-intro="Este é o menu principal." data-step="1">
             <div class="logo">
                 HouseWay
                 <h2>Tour 360°</h2>
             </div>
             <ul class="menu">
-                <li class="active">
+                <li class="active" data-intro="Aqui acessa seus tours criados." data-step="2">
                     <img 
                         class="icon" 
                         src="{{ url_for('static', filename='icons/dashboard.png') }}" 
                         alt="Meus tours" 
                         title="Meus tours">
                 </li>
-                <li>
+                <li data-intro="Aqui pode gerenciar sua conta." data-step="3">
                     <a 
                         href="https://joyceemiguel.wixstudio.com/houseway2/members-area/my/my-account" 
                         target="_blank">
@@ -37,24 +43,22 @@
                     </a>
                 </li>
             </ul>
-            
-            
         </aside>
 
+        <!-- Conteúdo principal -->
         <main class="main-content">
-            <header>
+            <header data-intro="Aqui você pode pesquisa entre os projetos existentes." data-step="4">
                 <h1>Meus tours</h1>
                 <input type="text" id="search-projects" placeholder="Procurar projetos...">
             </header>
-            <section class="projects" id="projects-container">
+            <section class="projects" id="projects-container" data-intro="Os projetos aparecerão nesta seção. Se você não tiver nenhum, crie um novo." data-step="5">
                 <div id="no-projects-message" class="no-projects-message">
                     Crie um novo projeto para começar.
                 </div>
             </section>
-            
         </main>
         
-        
+        <!-- Formulário lateral -->
         <aside class="right-sidebar dark">
             <div class="form-container">
                 <h2 id="form-title">Novo projeto</h2>
@@ -71,36 +75,55 @@
                     <div class="form-group">
                         <input type="text" id="longitude" name="longitude" placeholder="Longitude">
                     </div>
-                    <div class="form-buttons">
+                    <div class="form-buttons" data-intro="Clique para criar e depois clique no nome do projeto." data-step="6">
                         <button type="button" id="create-project-btn" class="btn-primary">Criar</button>
                         <button type="button" id="clear-form-btn" class="btn-primary">Limpar</button>
                     </div>                    
                 </form>
             </div>
         </aside>
-        
-          
-        <!--<aside class="right-sidebar">
-            <button id="createProjectBtn" class="btn-primary">Crear Proyecto</button>
-            <div class="calendar">
-                <h2>Thursday</h2>
-                <p>April 20, 2017</p>
-                <div class="date-picker">
-                </div>
-            </div>
-            <div class="tasks">
-                <h3>Due Today</h3>
-                <div class="task-list">
-                    <div class="task">Landing Page Design - Install WordPress</div>
-                    <div class="task">Landing Page Design - Custom Functionality</div>
-                </div>
-            </div>
-        </aside>-->
     </div>
-    <script src="{{ url_for('static', filename='js/projectsnew.js') }}"></script>
+
+    <!-- Scripts -->
     <script>
-        const userPlan = "{{ plan_name }}"; // El plan del usuario
-        const projectCount = {{ project_count }}; // Cantidad de proyectos del usuario
-    </script>    
+        const userPlan = "{{ plan_name }}"; // O plano do usuário
+        const projectCount = {{ project_count }}; // Quantidade de projetos do usuário
+
+        // Inicializa o tutorial interativo
+        document.addEventListener("DOMContentLoaded", () => {
+            // Verificar se o usuário já completou o tutorial
+            const hasCompletedTutorial = localStorage.getItem("tutorialCompleted");
+
+            // Se o tutorial não foi completado, iniciar automaticamente
+            if (!hasCompletedTutorial) {
+                startTutorial();
+                localStorage.setItem("tutorialCompleted", "true"); // Marcar o tutorial como completado
+            }
+        });
+
+        // Função para iniciar o tutorial
+        function startTutorial() {
+            introJs()
+                .setOptions({
+                    nextLabel: "Próximo",
+                    prevLabel: "Anterior",
+                    skipLabel: "x", // Ícone para fechar
+                    doneLabel: "Concluir"
+                })
+                .start();
+        }
+    </script>
+    <style>
+        /* Estilo do texto nos tooltips */
+        .introjs-tooltiptext {
+            color: #000 !important;
+            font-size: 16px !important;
+            line-height: 1.5 !important;
+            font-family: 'Nunito', sans-serif !important;
+            text-align: center !important;
+        }
+    </style>
+    
+    <script src="{{ url_for('static', filename='js/projectsnew.js') }}"></script>
 </body>
 </html>

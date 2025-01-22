@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Evento para eliminar el proyecto
         deleteButton.addEventListener('click', (event) => {
             event.stopPropagation(); // Prevenir la redirección cuando se hace clic en eliminar
-            if (confirm(`¿Estás seguro de que deseas eliminar el proyecto "${projectName}"?`)) {
+            if (confirm(`Tem certeza de que deseja excluir o projeto "${projectName}"?`)) {
                 deleteProject(projectName, projectCard);
             }
         });
@@ -238,8 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('description').value = projectDescription;
             document.getElementById('latitude').value = projectLatitude;
             document.getElementById('longitude').value = projectLongitude;
-            document.getElementById('create-project-btn').textContent = 'Guardar';
-            document.querySelector('.form-container h2').textContent = 'Editar Projeto';
+            document.getElementById('create-project-btn').textContent = 'Salvar';
+            document.querySelector('.form-container h2').textContent = 'Editar';
         });
 
         // Añadir la tarjeta al contenedor de proyectos

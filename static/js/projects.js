@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const projectsContainer = document.getElementById('projects-container');
 
     createProjectButton.addEventListener('click', () => {
-        const projectName = prompt('Introduce el nombre del proyecto:');
+        const projectName = prompt('Insira o nome do projeto:');
         if (projectName) {
             fetch('/api/create-project', {
                 method: 'POST',
@@ -17,12 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     addProjectThumbnail(projectName);
                 } else {
-                    notyf.error('El proyecto ya existe o hubo un error.');
+                    notyf.error('O projeto já existe ou houve um erro.');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                notyf.error('Hubo un error al crear el proyecto.');
+                console.error('Erro:', error);
+                notyf.error('Houve um erro ao criar o projeto.');
             });
         }
     });
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteButton.classList.add('delete-button');
         deleteButton.addEventListener('click', function(event) {
             event.stopPropagation();
-            if (confirm('¿Estás seguro de que deseas eliminar este proyecto?')) {
+            if (confirm('Tem certeza de que deseja excluir este projeto?')) {
                 deleteProject(projectName, projectWrapper);
             }
         });
@@ -68,12 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 projectWrapper.remove();
             } else {
-                notyf.error('Hubo un error al eliminar el proyecto.');
+                notyf.error('Houve um erro ao excluir o projeto.');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            notyf.error('Hubo un error al eliminar el proyecto.');
+            notyf.error('Houve um erro ao excluir o projeto.');
         });
     }
 

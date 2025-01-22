@@ -1,0 +1,4 @@
+criar hotspot de url, blur, img
+reinicia e aparecem as imagens que tem (alerta de que vai perder tudo se não guardar)
+track de cuantos tours disponibles por plano y tambien control de numero de tours por plano
+actualizar cards fuera (metadatadajson)

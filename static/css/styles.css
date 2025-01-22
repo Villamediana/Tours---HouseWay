@@ -290,6 +290,11 @@ footer {
     box-sizing: border-box;
 }
 
+.pnlm-sprite.pnlm-hot-spot-debug-indicator {
+    display: none !important;
+  }
+
+  
 #footer-left {
     display: flex;
     align-items: center;
@@ -399,6 +404,48 @@ footer {
     display: flex;
     align-items: center;
 }
+
+.custom-hotspot {
+    position: relative; /* Necesario para el posicionamiento del pseudo-elemento */
+    width: 40px; /* Tamaño del hotspot */
+    height: 40px;
+    background-image: url('../icons/hotspot/arrow.png'); /* Imagen personalizada */
+    background-size: cover; /* Ajusta la imagen al contenedor */
+    background-repeat: no-repeat;
+    border-radius: 50%; /* Mantiene el hotspot circular */
+    cursor: pointer; /* Cambia el cursor al pasar por encima */
+  }
+  
+  .custom-hotspot::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px; /* Mismo tamaño que el hotspot */
+    height: 40px;
+    border: 2px solid white; /* Aro blanco */
+    border-radius: 50%; /* Mantiene el aro circular */
+    transform: translate(-50%, -50%) scale(1); /* Centra el aro */
+    opacity: 0.7; /* Opacidad inicial del aro */
+    animation: pulse 2s infinite; /* Aplica la animación de pulso */
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.7;
+    }
+    70% {
+      transform: translate(-50%, -50%) scale(1.5);
+      opacity: 0;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1.5);
+      opacity: 0;
+    }
+  }
+  
+  
 
 .btn {
     margin-left: 10px;

@@ -57,59 +57,221 @@ function createScene(file) {
 function loadScene(sceneId) {
   const sceneConfig = tourConfig.scenes[sceneId];
   if (!sceneConfig) {
-    notyf.error("No se pudo cargar la escena.");
+    notyf.error("Não foi possível carregar a cena.");
     return;
   }
 
-  // Limpia el contenido del visor
   const viewerElement = document.getElementById("viewer");
-  viewerElement.innerHTML = ""; // Elimina todos los elementos DOM antiguos
+  viewerElement.innerHTML = ""; // Limpia el visor
 
-  // Reinstancia el visor con la configuración de la escena seleccionada
-  tourViewer = pannellum.viewer("viewer", sceneConfig);
+  // Cargar el visor con la escena seleccionada
+  tourViewer = pannellum.viewer("viewer", {
+    ...tourConfig, // Pasa toda la configuración del tour
+    default: tourConfig.default,
+    firstScene: sceneId // Establece la escena actual
+  });
+
+  // Asegúrate de que cada hotspot tenga funcionalidad
+  const currentSceneHotspots = tourConfig.scenes[sceneId].hotSpots || [];
+  currentSceneHotspots.forEach(hotspot => {
+    if (hotspot.type === "scene") {
+      hotspot.createTooltipFunc = function(hotSpotDiv) {
+        hotSpotDiv.classList.add("custom-tooltip");
+        hotSpotDiv.innerHTML = hotspot.text;
+        hotSpotDiv.style.cursor = "pointer";
+
+        // Configura el evento de clic para navegar
+        hotSpotDiv.addEventListener("click", function() {
+          loadScene(hotspot.sceneId);
+        });
+      };
+    }
+  });
+
+  // Recarga los hotspots para reflejar los cambios
+  addDraggableHotspots(sceneId);
 }
 
 
-/**
- * Função para criar o hotspot em uma cena (no drop).
- * Conserva o pitch/yaw atuais e recria o viewer.
- */
+
+
+
 function addHotspotToScene(sceneId, hotspot) {
   const sceneConfig = tourConfig.scenes[sceneId];
   if (!sceneConfig) return;
+
+  // Asegúrate de que el hotspot tiene un identificador único
+  hotspot.id = `hotspot-${Date.now()}`;
 
   // Verifica si ya existe un hotspot con las mismas coordenadas
   const existe = sceneConfig.hotSpots.find(
     hs => hs.pitch === hotspot.pitch && hs.yaw === hotspot.yaw
   );
   if (existe) {
-    notyf.error("Ya existe un hotspot en esta posición.");
+    notyf.error("Já existe um hotspot nesta posição.");
     return false;
   }
-
+  hotspot.cssClass = "custom-hotspot";
   // Agrega el nuevo hotspot
   sceneConfig.hotSpots.push(hotspot);
 
-  // Limpia y reinicia el visor con la configuración completa del tourConfig
-  const currentPitch = tourViewer.getPitch();
-  const currentYaw = tourViewer.getYaw();
+  // Cambia el borde del thumbnail correspondiente
+  const thumbnailWrapper = document.querySelector(`[data-scene-id="${sceneId}"]`);
+  if (thumbnailWrapper) {
+    thumbnailWrapper.style.border = "4px solid #80cdd9"; // Cambia el borde a verde
+  }
 
+  // Guarda el estado actual del visor
+  const currentPitch = tourViewer?.getPitch() || 0;
+  const currentYaw = tourViewer?.getYaw() || 0;
+  const currentHfov = tourViewer?.getHfov() || 120; // Zoom actual
+
+  // Limpia y reinicia el visor con el estado actual y la nueva configuración
   const viewerElement = document.getElementById("viewer");
   viewerElement.innerHTML = ""; // Limpia el visor
 
+
+
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+//  tourViewer = pannellum.viewer("viewer", {
+//    ...sceneConfig, // Configuración de la escena actualizada con el nuevo hotspot
+//    pitch: currentPitch, // Mantén el pitch actual
+//    yaw: currentYaw,     // Mantén el yaw actual
+//    hfov: currentHfov    // Mantén el zoom actual
+//  });
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+//---------------------------------------------------------------
+
+
+
   tourViewer = pannellum.viewer("viewer", {
-    default: tourConfig.default,   // Configuración predeterminada
-    scenes: tourConfig.scenes,     // Todas las escenas con los nuevos hotspots
-    pitch: currentPitch,           // Mantener posición actual
-    yaw: currentYaw
+    ...tourConfig, // Pasa todo el tourConfig para mantener las escenas conectadas
+    default: tourConfig.default,
+    firstScene: sceneId, // Mantén la escena activa
+    pitch: currentPitch, // Mantén el pitch actual
+    yaw: currentYaw,     // Mantén el yaw actual
+    hfov: currentHfov    // Mantén el zoom actual
+  });
+  
+
+  // Asegurar que todos los hotspots sean `draggable`, incluidos los nuevos
+  addDraggableHotspots(sceneId);
+
+  // Evento de clic derecho para eliminar hotspots
+  viewerElement.addEventListener("contextmenu", event => {
+    event.preventDefault();
+    const coords = tourViewer.mouseEventToCoords(event);
+
+    // Encuentra el hotspot en esas coordenadas
+    const hotspot = sceneConfig.hotSpots.find(
+      hs => Math.abs(hs.pitch - coords[0]) < 1 && Math.abs(hs.yaw - coords[1]) < 1
+    );
+
+    if (hotspot) {
+      if (confirm(`Você quer remover o "${hotspot.text}"?`)) {
+        removeHotspot(sceneId, hotspot.id);
+        // Restaurar el borde del thumbnail al eliminar un hotspot
+        if (!sceneConfig.hotSpots.length) {
+          thumbnailWrapper.style.border = "4px solid #80cdd9"; // Borde original
+        }
+      }
+    } else {
+      //notyf.error("No hay ningún hotspot en esta posición.");
+    }
+  });
+  return true;
+}
+
+function addDraggableHotspots(sceneId) {
+  const sceneConfig = tourConfig.scenes[sceneId];
+  if (!sceneConfig || !sceneConfig.hotSpots) return;
+
+  sceneConfig.hotSpots.forEach(hotspot => {
+    hotspot.createTooltipFunc = function(hotSpotDiv) {
+      hotSpotDiv.setAttribute("draggable", true);
+
+      // Manejar inicio del arrastre
+      hotSpotDiv.addEventListener("dragstart", function(event) {
+        event.dataTransfer.setData("hotspotId", hotspot.id);
+        event.dataTransfer.setData("sceneId", sceneId);
+      });
+
+      hotSpotDiv.style.cursor = "grab";
+    };
   });
 
-  return true;
+  // Forzar la recarga para aplicar las funciones `createTooltipFunc`
+  const currentPitch = tourViewer.getPitch();
+  const currentYaw = tourViewer.getYaw();
+  const currentHfov = tourViewer.getHfov();
+
+  const viewerElement = document.getElementById("viewer");
+  viewerElement.innerHTML = "";
+
+  tourViewer = pannellum.viewer("viewer", {
+    ...sceneConfig,
+    pitch: currentPitch,
+    yaw: currentYaw,
+    hfov: currentHfov
+  });
 }
 
 
 
+function removeHotspot(sceneId, hotspotId) {
+  const sceneConfig = tourConfig.scenes[sceneId];
+  if (!sceneConfig) return;
+
+  // Filtra los hotspots y elimina el que coincida con el ID
+  sceneConfig.hotSpots = sceneConfig.hotSpots.filter(hotspot => hotspot.id !== hotspotId);
+
+  // Obtén los valores actuales del visor
+  const currentPitch = tourViewer.getPitch();
+  const currentYaw = tourViewer.getYaw();
+  const currentHfov = tourViewer.getHfov(); // Zoom actual
+
+  // Limpia solo el visor, no la configuración global
+  const viewerElement = document.getElementById("viewer");
+  viewerElement.innerHTML = "";
+
+  // Recarga solo la escena actual con los valores actuales
+  tourViewer = pannellum.viewer("viewer", {
+    ...sceneConfig,       // Configuración actualizada de la escena
+    pitch: currentPitch,  // Mantén el pitch actual
+    yaw: currentYaw,      // Mantén el yaw actual
+    hfov: currentHfov     // Mantén el zoom actual
+  });
+}
+
+
+function addDraggableHotspots(sceneId) {
+  const sceneConfig = tourConfig.scenes[sceneId];
+  if (!sceneConfig || !sceneConfig.hotSpots) return;
+
+  sceneConfig.hotSpots.forEach(hotspot => {
+    hotspot.createTooltipFunc = function(hotSpotDiv) {
+      hotSpotDiv.setAttribute("draggable", true);
+
+      // Manejar inicio del arrastre
+      hotSpotDiv.addEventListener("dragstart", function(event) {
+        event.dataTransfer.setData("hotspotId", hotspot.id);
+        event.dataTransfer.setData("sceneId", sceneId);
+      });
+
+      hotSpotDiv.style.cursor = "grab";
+    };
+  });
+}
+
+
+
+
+
 document.addEventListener("DOMContentLoaded", () => {
+
   const validExtensions = ["image/jpeg", "image/png"];
   const thumbnailContainer = document.getElementById("thumbnail-container");
   let thumbnailIdCounter = 0;
@@ -123,7 +285,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!validExtensions.includes(file.type)) {
       notyf.open({
         type: "info",
-        message: "Por favor, selecciona un archivo de imagen válido (.jpg, .png).",
+        message: "Por favor, selecione um arquivo de imagem válido (.jpg, .png).",
         duration: 4000,
         background: "#F3C959",
         dismissible: true
@@ -173,78 +335,82 @@ document.addEventListener("DOMContentLoaded", () => {
     const thumbnailWrapper = document.createElement("div");
     thumbnailWrapper.classList.add("thumbnail-wrapper");
     thumbnailWrapper.id = "thumbnail-" + thumbnailIdCounter++;
-
+  
     // Armazena o sceneId no data-attribute
     thumbnailWrapper.dataset.sceneId = sceneId;
-
+  
     // Torna a miniatura arrastável
     thumbnailWrapper.setAttribute("draggable", true);
     thumbnailWrapper.addEventListener("dragstart", event => {
-      // Em vez de salvar a blobURL, salvamos o sceneId (para criar hotspot entre cenas)
       event.dataTransfer.setData("sceneId", sceneId);
     });
-
+  
     // Imagem de miniatura
     const imgThumbnail = document.createElement("img");
     imgThumbnail.src = imageUrl;
     imgThumbnail.classList.add("thumbnail");
-
+  
     // Ao clicar na miniatura, carrega a cena
     imgThumbnail.addEventListener("click", function () {
       loadScene(sceneId);
     });
-
+  
     // Botão para excluir
     const actionButtons = document.createElement("div");
     actionButtons.classList.add("action-buttons");
-
+  
     const deleteButton = document.createElement("button");
     deleteButton.innerHTML = "✖";
     deleteButton.addEventListener("click", function (e) {
       e.stopPropagation();
-
+  
       // Remove do array uploadedImages com base no índice do DOM
       const index = Array.from(thumbnailWrapper.parentNode.children).indexOf(thumbnailWrapper);
       uploadedImages.splice(index, 1);
-
+  
       // Remove o thumbnail
       thumbnailWrapper.remove();
-
-      // (Opcional) Poderia remover a cena do tourConfig, se desejar
+  
+      // Remove a cena do tourConfig
       if (tourConfig.scenes[sceneId]) {
         delete tourConfig.scenes[sceneId];
       }
-
+  
       updateOrderNumbers();
       checkEmptyThumbnails();
     });
     actionButtons.appendChild(deleteButton);
-
+  
     // Detalhes: ordem + nome
     const detailsContainer = document.createElement("div");
     detailsContainer.classList.add("thumbnail-details");
-
+  
     const orderNumber = document.createElement("span");
     orderNumber.classList.add("order-number");
     orderNumber.textContent = thumbnailContainer.children.length + 1;
-
+  
     const nameInput = document.createElement("input");
     nameInput.type = "text";
     nameInput.placeholder = "Ambiente";
     nameInput.classList.add("name-input");
-    nameInput.maxLength = 12;
-
+    nameInput.maxLength = 20;
+  
+    // Atualiza o nome da cena quando o usuário digita no input
+    nameInput.addEventListener("input", function () {
+      tourConfig.scenes[sceneId].name = nameInput.value || "Ambiente sem nome";
+    });
+  
     detailsContainer.appendChild(orderNumber);
     detailsContainer.appendChild(nameInput);
-
+  
     // Monta tudo
     thumbnailWrapper.appendChild(imgThumbnail);
     thumbnailWrapper.appendChild(actionButtons);
     thumbnailWrapper.appendChild(detailsContainer);
     thumbnailContainer.appendChild(thumbnailWrapper);
-
+  
     toggleSearchBar();
-  }
+  }  
 
   function checkEmptyThumbnails() {
     if (thumbnailContainer.children.length === 0) {
@@ -276,68 +442,77 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Drag & drop no contêiner do viewer
   const viewerElement = document.getElementById("viewer");
+  
   viewerElement.addEventListener("dragover", event => {
     event.preventDefault(); // Permite soltar
   });
-
+  
   viewerElement.addEventListener("drop", event => {
     event.preventDefault();
     if (!tourViewer) return;
-
-    // Pega o sceneId que está sendo arrastado
-    const droppedSceneId = event.dataTransfer.getData("sceneId");
-    if (!droppedSceneId) return;
-
-    // Obter posição atual do viewer
-    const currentPitch = tourViewer.getPitch();
-    const currentYaw = tourViewer.getYaw();
-
-    // Pegar a cena atualmente carregada
-    // Precisamos descobrir qual sceneId está sendo exibido no momento
-    // Se você quiser manter isso, pode armazenar num global "activeSceneId" ao chamar loadScene
-    // Aqui, assumindo que o viewer possui 'config.sceneId' (não nativo do Pannellum, mas podemos trackear)
-    // Vamos tentar descobrir varrendo as scenes:
+  
+    // Obtener el sceneId de la escena actual
     let activeSceneId = null;
     for (const sid in tourConfig.scenes) {
-      // Comparar se o panorama do viewer bate com o panorama de cada scene
-      // ou manter global ao chamar loadScene(sid).
       if (tourViewer && tourViewer.getConfig().panorama === tourConfig.scenes[sid].panorama) {
         activeSceneId = sid;
         break;
       }
     }
     if (!activeSceneId) return;
-
+  
     // Usa API do Pannellum para coordenadas do clique
     const coords = tourViewer.mouseEventToCoords(event);
     if (!coords) return;
-
+  
     const pitch = coords[0];
     const yaw = coords[1];
+  
+    // Detectar si el drop corresponde a un hotspot existente o uno nuevo
+    const hotspotId = event.dataTransfer.getData("hotspotId"); // Verificar si es un hotspot arrastrado
+    if (hotspotId) {
+      // Mover un hotspot existente
+      const sceneConfig = tourConfig.scenes[activeSceneId];
+      const hotspot = sceneConfig.hotSpots.find(hs => hs.id === hotspotId);
+      if (hotspot) {
+        hotspot.pitch = pitch;
+        hotspot.yaw = yaw;
+  
+        // Recargar la escena para reflejar los cambios
+        const currentPitch = tourViewer.getPitch();
+        const currentYaw = tourViewer.getYaw();
+        const currentHfov = tourViewer.getHfov();
+  
+        document.getElementById("viewer").innerHTML = ""; // Limpiar visor
+  
+        tourViewer = pannellum.viewer("viewer", {
+          ...sceneConfig,
+          pitch: currentPitch,
+          yaw: currentYaw,
+          hfov: currentHfov
+        });
 
-    // Cria hotspot do tipo 'scene' apontando para droppedSceneId
-    const newHotspot = {
-      pitch,
-      yaw,
-      type: "scene",
-      text: "Ir a otra escena",
-      sceneId: droppedSceneId
-    };
-
-    // Adiciona o hotspot na cena atualmente ativa
-    const ok = addHotspotToScene(activeSceneId, newHotspot);
-    if (!ok) return; // Se já existia, paramos
-
-    // Recarrega o viewer (para atualizar o hotspot) mantendo pitch/yaw
-    const activeSceneConfig = tourConfig.scenes[activeSceneId];
-    document.getElementById("viewer").innerHTML = "";
-
-    tourViewer = pannellum.viewer("viewer", {
-      ...activeSceneConfig,
-      pitch: currentPitch,
-      yaw: currentYaw
-    });
+      }
+    } else {
+      // Crear un nuevo hotspot
+      const droppedSceneId = event.dataTransfer.getData("sceneId");
+      if (!droppedSceneId) return;
+  
+      const droppedSceneName = tourConfig.scenes[droppedSceneId]?.name || "outra cena"; // Obtener el nombre de la escena
+      const newHotspot = {
+        id: `hotspot-${Date.now()}`, // ID único
+        pitch,
+        yaw,
+        type: "scene",
+        text: `Ir a ${droppedSceneName}`, // Incluye el nombre de la escena
+        sceneId: droppedSceneId
+      };
+  
+      const ok = addHotspotToScene(activeSceneId, newHotspot);
+      if (!ok) return; // Si ya existía, paramos
+    }
   });
+  
 
   // Menu do footer
   const menuItems = document.querySelectorAll("#menu ul li");
@@ -388,15 +563,15 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          notyf.success("¡Proyecto guardado exitosamente!");
+          notyf.success("Projeto salvo com sucesso!");
           projectNameElement.innerHTML = `<a href="${data.viewer_url}" target="_blank">${projectName}</a>`;
         } else {
-          notyf.error("Hubo un error al guardar el proyecto.");
+          notyf.error("Houve um erro ao salvar o projeto.");
         }
       })
       .catch(error => {
         console.error("Error:", error);
-        notyf.error("Hubo un error al guardar el proyecto.");
+        notyf.error("Houve um erro ao salvar o projeto.");
       });
   });
 });
@@ -404,14 +579,14 @@ document.addEventListener("DOMContentLoaded", () => {
 // Botón para establecer el ángulo y el zoom actuales como predeterminados
 document.getElementById("setAngleButton").addEventListener("click", () => {
   if (!tourViewer) {
-    notyf.error("No hay ninguna imagen cargada.");
+    notyf.error("Não há nenhuma imagem carregada.");
     return;
   }
 
   // Obtén los valores actuales del visor
   const currentPitch = tourViewer.getPitch();
   const currentYaw = tourViewer.getYaw();
-  const currentHfov = tourViewer.getHfov(); // Zoom actual
+  const currentHfov = tourViewer.getHfov();
 
   // Encuentra la escena activa
   let activeSceneId = null;
@@ -423,7 +598,7 @@ document.getElementById("setAngleButton").addEventListener("click", () => {
   }
 
   if (!activeSceneId) {
-    notyf.error("No se pudo identificar la escena activa.");
+    notyf.error("Não foi possível identificar a cena ativa.");
     return;
   }
 
@@ -433,8 +608,19 @@ document.getElementById("setAngleButton").addEventListener("click", () => {
   sceneConfig.yaw = currentYaw;     // Guarda el yaw
   sceneConfig.hfov = currentHfov;   // Guarda el zoom
 
-  notyf.success("¡Ángulo y zoom actualizados!");
+  // Limpia el visor para evitar duplicaciones
+  const viewerElement = document.getElementById("viewer");
+  viewerElement.innerHTML = ""; // Limpia el visor completamente
 
-  // Opcional: recargar la escena para reflejar los cambios inmediatamente
-  tourViewer = pannellum.viewer("viewer", sceneConfig);
+  // Recarga el visor con la configuración actualizada
+  tourViewer = pannellum.viewer("viewer", {
+    ...tourConfig, // Pasa toda la configuración del tour
+    default: tourConfig.default,
+    firstScene: activeSceneId, // Mantén la escena activa
+    pitch: currentPitch,       // Mantén el pitch actual
+    yaw: currentYaw,           // Mantén el yaw actual
+    hfov: currentHfov          // Mantén el zoom actual
+  });
+
+  notyf.success("Ângulo e zoom atualizados!");
 });

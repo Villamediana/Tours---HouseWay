@@ -104,7 +104,7 @@ def login():
             json.dump(codigo_data, code_file, ensure_ascii=False, indent=4)
 
         # Enviar correo
-        enviar_correo(email, "Seu codigo para fazer login", f"Seu codigo é: {codigo}")
+        enviar_correo(email, "Seu codigo para fazer login", f"{codigo}")
 
         return render_template('verificar.html', email=email)
 
@@ -172,17 +172,44 @@ def reenviar_codigo():
     with open(os.path.join(user_folder, 'codigo.json'), 'w', encoding='utf-8') as code_file:
         json.dump(codigo_data, code_file, ensure_ascii=False, indent=4)
 
-    enviar_correo(email, "Seu codigo para fazer login", f"Seu codigo é: {codigo}")
+    enviar_correo(email, "Seu codigo para fazer login", f"{codigo}")
     return render_template('verificar.html', email=email, mensaje="Você recebeu um novo código no seu e-mail.")
 
 
 def enviar_correo(destinatario, asunto, cuerpo):
     try:
+        # Plantilla HTML para el correo
+        html_cuerpo = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color: #333; color: #FFF; line-height: 1.6; margin: 0; padding: 0;">
+            <div style="max-width: 600px; margin: 20px auto; border-radius: 10px; overflow: hidden; background-color: #444; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);border: 1px solid #ddd; border-radius: 10px;">
+                <div style="background-color: #2B2B2B; padding: 20px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 36px; color: #FFF;">HouseWay</h1>
+                </div>
+                <div style="padding: 40px; text-align: center;">
+                    <h2 style="color: #FFF; font-size: 20px; margin-bottom: 20px;">{asunto}</h2>
+                    <p style="font-size: 30px; color: #FFF; margin: 0; text-align: center;">{cuerpo}</p>
+                </div>
+                <div style="background-color: #555; padding: 15px; text-align: center; font-size: 14px; color: #DDD;">
+                    <p>Este é um email automático. Por favor, não responda.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Crear el mensaje
         msg = Message(asunto, sender=app.config['MAIL_USERNAME'], recipients=[destinatario])
-        msg.body = cuerpo
+        msg.body = cuerpo  # Texto plano
+        msg.html = html_cuerpo  # Cuerpo HTML con diseño
         mail.send(msg)
+
+        print(f"E-mail enviado para {destinatario}")
     except Exception as e:
-        print(f"Error enviando correo: {e}")
+        print(f"Erro ao enviar o e-mail: {e}")
+
+
+
 
 
 #STARTEND WEBHOOKS ---------------------------
@@ -481,17 +508,17 @@ def update_project(project_name):
 def save_image():
     user_email = session.get('user_email')
     if not user_email:
-        return jsonify(success=False, message="Usuario no autenticado"), 401
+        return jsonify(success=False, message="Usuário não autenticado"), 401
 
     project_name = request.form.get('folderName')
     if not project_name:
-        return jsonify(success=False, message="No folder name provided"), 400
+        return jsonify(success=False, message="Nenhum nome de pasta fornecido."), 400
 
     with open(USERS_JSON, 'r', encoding='utf-8') as file:
         users_data = json.load(file)
         user_id = users_data.get(user_email)
         if not user_id:
-            return jsonify(success=False, message="Usuario no encontrado"), 404
+            return jsonify(success=False, message="Usuário não encontrado."), 404
 
     # Crear la carpeta del proyecto si no existe
     folder_path = os.path.join(USERS_FOLDER, user_id, project_name)
@@ -507,7 +534,7 @@ def save_image():
             saved_files.append(file.filename)
 
     if not saved_files:
-        return jsonify(success=False, message="No se procesaron imágenes"), 400
+        return jsonify(success=False, message="Nenhuma imagem foi processada."), 400
 
     # Leer el tourConfig enviado desde el cliente
     tour_config = json.loads(request.form.get('tourConfig'))
@@ -522,7 +549,7 @@ def save_image():
     # URL del visualizador
     viewer_url = url_for('static', filename=f'users/{user_id}/{project_name}/index.html', _external=True)
 
-    return jsonify(success=True, message="Proyecto guardado exitosamente", viewer_url=viewer_url)
+    return jsonify(success=True, message="Projeto salvo com sucesso.", viewer_url=viewer_url)
 
 
 def create_viewer_html(folder_path, tour_config):
@@ -555,7 +582,7 @@ def create_viewer_html(folder_path, tour_config):
 def get_user_folder():
     user_email = session.get('user_email')
     if not user_email:
-        raise ValueError("Usuario no logado.")
+        raise ValueError("Usuário não logado.")
     user_id = get_user_id(user_email)  # Función para obtener el ID del usuario
     return os.path.join(USERS_FOLDER, user_id)
 
