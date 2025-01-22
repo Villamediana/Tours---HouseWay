@@ -1,9 +1,0 @@
-{
-    "contact": {
-        "email": "test@example.com",
-        "name": {
-            "first": "John",
-            "last": "Doe"
-        }
-    }
-}

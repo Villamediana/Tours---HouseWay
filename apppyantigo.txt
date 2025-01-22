@@ -317,6 +317,7 @@ def load_project(project_name):
     return render_template('index.html', project_name=project_name)
 
 @app.route('/api/projects')
+@app.route('/api/projects')
 def list_projects():
     try:
         user_folder = get_user_folder()  # Carpeta del usuario logado
@@ -483,49 +484,80 @@ def save_image():
     if not user_email:
         return jsonify(success=False, message="Usuario no autenticado"), 401
 
-    project_name = request.form.get('folderName')
+    project_name = request.form.get('folderName')  # Nombre del proyecto
     if not project_name:
-        return jsonify(success=False, message="No folder name provided"), 400
+        return jsonify(success=False, message="No folder name provided")
 
+    # Obtener el ID del usuario desde users.json
     with open(USERS_JSON, 'r', encoding='utf-8') as file:
         users_data = json.load(file)
         user_id = users_data.get(user_email)
         if not user_id:
             return jsonify(success=False, message="Usuario no encontrado"), 404
 
-    # Crear la carpeta del proyecto si no existe
+    # Construir la ruta del proyecto
     folder_path = os.path.join(USERS_FOLDER, user_id, project_name)
-    os.makedirs(folder_path, exist_ok=True)
+    if not os.path.exists(folder_path):
+        return jsonify(success=False, message="Carpeta del proyecto no existe"), 404
 
-    # Procesar las imágenes
-    files = request.files.getlist('image')
+    images_data_json = request.form.get('imagesData')
+    images_data = json.loads(images_data_json)
+
     saved_files = []
-    for file in files:
+    project_data = {
+        "project_name": project_name,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "images": []
+    }
+
+    files = request.files.getlist('image')
+
+    for index, image in enumerate(images_data):
+        file = files[index]
         if file and file.filename != '':
             file_path = os.path.join(folder_path, file.filename)
             file.save(file_path)
             saved_files.append(file.filename)
 
-    if not saved_files:
-        return jsonify(success=False, message="No se procesaron imágenes"), 400
+            # Ruta relativa desde static/users
+            image_relative_path = f'static/users/{user_id}/{project_name}/{file.filename}'
 
-    # Leer el tourConfig enviado desde el cliente
-    tour_config = json.loads(request.form.get('tourConfig'))
+            image_data = {
+                "room": image['name'],
+                "nameOriginal": file.filename,
+                "order": image['order'],
+                "path": image_relative_path,  # Ruta relativa desde static/users
+                "hotspots": image.get("hotspots", [])  # Hotspots enviados desde el frontend
+            }
+            project_data["images"].append(image_data)
 
-    # Actualizar solo los nombres de las imágenes en el tourConfig
-    for scene_id, scene_data in tour_config['scenes'].items():
-        scene_data['panorama'] = scene_data['panorama'].split("\\")[-1]  # Solo guarda el nombre del archivo
+    if not project_data["images"]:
+        return jsonify(success=False, message="No images processed")
 
-    # Generar el archivo HTML del visualizador
-    create_viewer_html(folder_path, tour_config)
+    project_data["images"].sort(key=lambda x: x["order"])
 
-    # URL del visualizador
+    # Crear el visualizador HTML
+    create_viewer_html(folder_path, project_data["images"][0]["path"])
+
+    # URL completa para el visualizador
     viewer_url = url_for('static', filename=f'users/{user_id}/{project_name}/index.html', _external=True)
+    project_data["viewer_url"] = viewer_url
 
-    return jsonify(success=True, message="Proyecto guardado exitosamente", viewer_url=viewer_url)
+    # Guardar el archivo JSON en la carpeta del proyecto
+    json_path = os.path.join(folder_path, 'project_data.json')
+    with open(json_path, 'w') as json_file:
+        json.dump(project_data, json_file, indent=4)
+
+    if saved_files:
+        return jsonify(success=True, message="Archivos guardados exitosamente", files=saved_files, viewer_url=project_data["viewer_url"])
+    else:
+        return jsonify(success=False, message="No files saved")
 
 
-def create_viewer_html(folder_path, tour_config):
+
+
+
+def create_viewer_html(folder_path, first_image_path):
     viewer_html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -533,22 +565,57 @@ def create_viewer_html(folder_path, tour_config):
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Visualizador Tour 360°</title>
-        <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                background-color: #1c1c1e;
+                color: #f5f5f7;
+            }}
+            #viewer-container {{
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                position: relative;
+                box-sizing: border-box;
+            }}
+            #viewer {{
+                width: 100%;
+                height: 100%;
+                background-color: #000;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+            }}
+        </style>
     </head>
     <body>
-        <div id="viewer" style="width: 100%; height: 100vh;"></div>
+        <div id="viewer-container">
+            <div id="viewer"></div>
+        </div>
+
+        <script src="../../../js/three.min.js"></script>
+        <script src="../../../js/panolens.min.js"></script>
         <script>
-            pannellum.viewer('viewer', {json.dumps(tour_config, indent=4)});
+            fetch('project_data.json')
+                .then(response => response.json())
+                .then(data => {{
+                    const firstImagePath = data.images[0].path;
+                    const viewer = new PANOLENS.Viewer({{ container: document.getElementById('viewer') }});
+                    const panorama = new PANOLENS.ImagePanorama('/' + firstImagePath);
+                    viewer.add(panorama);
+                }})
+                .catch(error => console.error('Error al cargar el JSON:', error));
         </script>
     </body>
     </html>
     """
-    with open(os.path.join(folder_path, 'index.html'), 'w', encoding='utf-8') as html_file:
+    with open(os.path.join(folder_path, 'index.html'), 'w') as html_file:
         html_file.write(viewer_html_content)
-
-
-
 
 
 # Obtiene la carpeta personal del usuario logado

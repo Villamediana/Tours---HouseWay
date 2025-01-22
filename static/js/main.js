@@ -1,278 +1,440 @@
 let uploadedImages = [];
 const notyf = new Notyf();
-document.addEventListener('DOMContentLoaded', () => {
-    const validExtensions = ['image/jpeg', 'image/png'];
-    let currentImageUrl = null; // Variable para almacenar la URL de la imagen actual
-    const initialPosition = { x: 0, y: 0 };  // Posición inicial (mirando hacia el frente)
-    const thumbnailContainer = document.getElementById('thumbnail-container');
-    let thumbnailIdCounter = 0;
 
-    document.getElementById('uploadImage').addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        
-        if (file) {
-            if (!validExtensions.includes(file.type)) {
-                alert('Por favor, selecciona un archivo de imagen válido (.jpg, .png).');
+// Instância global do viewer Pannellum
+let tourViewer = null;
 
-                notyf.open({
-                    type: 'info', // Tipo personalizado
-                    message: 'Por favor, selecciona un archivo de imagen válido (.jpg, .png).',
-                    duration: 4000, // Duración en milisegundos
-                    background: '#F3C959', // Color personalizado
-                    dismissible: true // Permite cerrar la notificación manualmente
-                  });
-               
-                event.target.value = '';
-                return;
-            }
-    
-            const img = new Image();
-            img.onload = function() {
-                if (img.width / img.height === 2) {
-                    const imageUrl = URL.createObjectURL(file);
-                    addThumbnail(imageUrl, event.target);
-                    addPanorama(imageUrl);
-                    uploadedImages.push(file);  // Almacenar la imagen en el array
-                    document.getElementById('placeholder-text').style.display = 'none';
-    
-                    toggleSearchBar();
-                } else {
-                    notyf.open({
-                        type: 'info', // Tipo personalizado
-                        message: 'Por favor, selecciona una imagen 360° con proporción 2:1.',
-                        duration: 4000, // Duración en milisegundos
-                        background: '#F3C959', // Color personalizado
-                        dismissible: true // Permite cerrar la notificación manualmente
-                      });
-                    event.target.value = '';
-                }
-            };
-    
-            img.src = URL.createObjectURL(file);
-        }
-    });
+/**
+ * tourConfig: Configuração geral do tour,
+ * contendo a cena padrão e um objeto "scenes" para cada cena.
+ */
+let tourConfig = {
+  default: {
+    firstScene: "",
+    author: "",
+    sceneFadeDuration: 1000
+  },
+  scenes: {}
+};
 
-    function addThumbnail(imageUrl, inputElement) {
-        const thumbnailWrapper = document.createElement('div');
-        thumbnailWrapper.classList.add('thumbnail-wrapper');
-        thumbnailWrapper.id = 'thumbnail-' + thumbnailIdCounter++;
-    
-        const imgThumbnail = document.createElement('img');
-        imgThumbnail.src = imageUrl;
-        imgThumbnail.classList.add('thumbnail');
-        imgThumbnail.addEventListener('click', function() {
-            addPanorama(imageUrl);
-        });
-    
-        const actionButtons = document.createElement('div');
-        actionButtons.classList.add('action-buttons');
-    
-        const deleteButton = document.createElement('button');
-        deleteButton.innerHTML = '✖';
-        deleteButton.addEventListener('click', function(event) {
-            event.stopPropagation(); // Prevenir que se cargue la imagen en el visualizador
-            const index = Array.from(thumbnailWrapper.parentNode.children).indexOf(thumbnailWrapper);
-            
-            uploadedImages.splice(index, 1); // Eliminar la imagen del array uploadedImages
-            thumbnailWrapper.remove(); // Eliminar la miniatura del DOM
-            
-            updateOrderNumbers(); // Actualizar los números de orden
-            checkEmptyThumbnails(); // Verificar si quedan miniaturas
-        });
-    
-        actionButtons.appendChild(deleteButton);
-    
-        const detailsContainer = document.createElement('div');
-        detailsContainer.classList.add('thumbnail-details');
-    
-        const orderNumber = document.createElement('span');
-        orderNumber.classList.add('order-number');
-        orderNumber.textContent = thumbnailContainer.children.length + 1;
-    
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.placeholder = 'Ambiente';
-        nameInput.classList.add('name-input');
-        nameInput.maxLength = 12;
-    
-        detailsContainer.appendChild(orderNumber);
-        detailsContainer.appendChild(nameInput);
-    
-        thumbnailWrapper.appendChild(imgThumbnail);
-        thumbnailWrapper.appendChild(actionButtons);
-        thumbnailWrapper.appendChild(detailsContainer);
-    
-        thumbnailContainer.appendChild(thumbnailWrapper);
-    
+// Contador para gerar IDs de cena
+let sceneCounter = 0;
+
+/**
+ * createScene:
+ * Cria uma nova cena no tourConfig usando o arquivo (imageFile)
+ * Retorna { sceneId, imageUrl } para uso posterior (thumbnail, etc.)
+ */
+function createScene(file) {
+  const sceneId = "scene-" + (++sceneCounter);
+  const imageUrl = URL.createObjectURL(file);
+
+  const sceneConfig = {
+    type: "equirectangular",
+    panorama: imageUrl,
+    autoLoad: true,
+    showControls: true,
+    autoRotate: 0,
+    hotSpotDebug: true,
+    hfov: 120,
+    hotSpots: []
+  };
+
+  tourConfig.scenes[sceneId] = sceneConfig;
+
+  // Se não temos uma cena inicial definida ainda, define esta como padrão
+  if (!tourConfig.default.firstScene) {
+    tourConfig.default.firstScene = sceneId;
+  }
+
+  return { sceneId, imageUrl };
+}
+
+/**
+ * loadScene:
+ * Carrega a cena pelo sceneId no elemento #viewer.
+ */
+function loadScene(sceneId) {
+  const sceneConfig = tourConfig.scenes[sceneId];
+  if (!sceneConfig) {
+    notyf.error("No se pudo cargar la escena.");
+    return;
+  }
+
+  // Limpia el contenido del visor
+  const viewerElement = document.getElementById("viewer");
+  viewerElement.innerHTML = ""; // Elimina todos los elementos DOM antiguos
+
+  // Reinstancia el visor con la configuración de la escena seleccionada
+  tourViewer = pannellum.viewer("viewer", sceneConfig);
+}
+
+
+/**
+ * Função para criar o hotspot em uma cena (no drop).
+ * Conserva o pitch/yaw atuais e recria o viewer.
+ */
+function addHotspotToScene(sceneId, hotspot) {
+  const sceneConfig = tourConfig.scenes[sceneId];
+  if (!sceneConfig) return;
+
+  // Verifica si ya existe un hotspot con las mismas coordenadas
+  const existe = sceneConfig.hotSpots.find(
+    hs => hs.pitch === hotspot.pitch && hs.yaw === hotspot.yaw
+  );
+  if (existe) {
+    notyf.error("Ya existe un hotspot en esta posición.");
+    return false;
+  }
+
+  // Agrega el nuevo hotspot
+  sceneConfig.hotSpots.push(hotspot);
+
+  // Limpia y reinicia el visor con la configuración completa del tourConfig
+  const currentPitch = tourViewer.getPitch();
+  const currentYaw = tourViewer.getYaw();
+
+  const viewerElement = document.getElementById("viewer");
+  viewerElement.innerHTML = ""; // Limpia el visor
+
+  tourViewer = pannellum.viewer("viewer", {
+    default: tourConfig.default,   // Configuración predeterminada
+    scenes: tourConfig.scenes,     // Todas las escenas con los nuevos hotspots
+    pitch: currentPitch,           // Mantener posición actual
+    yaw: currentYaw
+  });
+
+  return true;
+}
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const validExtensions = ["image/jpeg", "image/png"];
+  const thumbnailContainer = document.getElementById("thumbnail-container");
+  let thumbnailIdCounter = 0;
+
+  // Upload de imagem
+  document.getElementById("uploadImage").addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validar extensão
+    if (!validExtensions.includes(file.type)) {
+      notyf.open({
+        type: "info",
+        message: "Por favor, selecciona un archivo de imagen válido (.jpg, .png).",
+        duration: 4000,
+        background: "#F3C959",
+        dismissible: true
+      });
+      event.target.value = "";
+      return;
+    }
+
+    // Validar proporção 2:1 (checando width/height)
+    const img = new Image();
+    img.onload = function () {
+      if (img.width / img.height === 2) {
+        // Criar cena nova
+        const { sceneId, imageUrl } = createScene(file);
+
+        // Criar miniatura
+        addThumbnail(sceneId, imageUrl);
+
+        // Carregar essa cena no viewer
+        loadScene(sceneId);
+
+        // Guardar arquivo (para upload posterior)
+        uploadedImages.push(file);
+
+        document.getElementById("placeholder-text").style.display = "none";
         toggleSearchBar();
-    }
-    
-    function resetViewer() {
-        if (viewer.panorama) {
-            viewer.remove(viewer.panorama);
-            viewer.panorama.dispose();
-            viewer.panorama = null;
-        }
-        
-        currentImageUrl = null; // Restablecer la imagen actual
-        
-        document.getElementById('placeholder-text').style.display = 'block'; // Mostrar el texto de placeholder
-    }
-    
-    
-    function updateOrderNumbers() {
-        const wrappers = document.querySelectorAll('.thumbnail-wrapper .order-number');
-        let newOrder = [];
-    
-        wrappers.forEach((orderNumber, index) => {
-            orderNumber.textContent = index + 1;
-            const nameInput = wrappers[index].closest('.thumbnail-wrapper').querySelector('.name-input').value;
-            newOrder.push(nameInput || `Ambiente ${index + 1}`);
+      } else {
+        notyf.open({
+          type: "info",
+          message: "Por favor, selecciona una imagen 360° con proporción 2:1.",
+          duration: 4000,
+          background: "#F3C959",
+          dismissible: true
         });
-    }
-   
-    /*
-    // Configuración de SortableJS para manejar el drag and drop
-    new Sortable(thumbnailContainer, {
-        animation: 150,
-        onEnd: function (evt) {
-            updateOrderNumbers(); // Actualizar números después de reordenar
-        },
-    });*/
+        event.target.value = "";
+      }
+    };
+    img.src = URL.createObjectURL(file);
+  });
 
-    function checkEmptyThumbnails() {
-        if (document.getElementById('thumbnail-container').children.length === 0) {
-            document.getElementById('placeholder-text').style.display = 'block'; // Mostrar el texto de placeholder
-            resetViewer(); // Restablecer el visualizador
-            toggleSearchBar(); // Ocultar la barra de búsqueda si no hay miniaturas
-        }
-    }
-    
+  /**
+   * addThumbnail:
+   * Cria a miniatura, a torna arrastável e associa eventos de clique/arraste.
+   * Recebe o sceneId e a URL blob para exibir no <img>.
+   */
+  function addThumbnail(sceneId, imageUrl) {
+    const thumbnailWrapper = document.createElement("div");
+    thumbnailWrapper.classList.add("thumbnail-wrapper");
+    thumbnailWrapper.id = "thumbnail-" + thumbnailIdCounter++;
 
-    function addPanorama(imageUrl) {
-        const panorama = new PANOLENS.ImagePanorama(imageUrl);
-            
-        viewer.add(panorama);
-        viewer.setPanorama(panorama);
-    
-        currentImageUrl = imageUrl; // Actualizar la imagen actual
-    }
-    
+    // Armazena o sceneId no data-attribute
+    thumbnailWrapper.dataset.sceneId = sceneId;
 
-    const viewer = new PANOLENS.Viewer({
-        container: document.getElementById('viewer'),
-        controlBar: true,
-        controlButtons: ["fullscreen", "setting"],
-        autoHideControlBar: false,
-        superSample: true
+    // Torna a miniatura arrastável
+    thumbnailWrapper.setAttribute("draggable", true);
+    thumbnailWrapper.addEventListener("dragstart", event => {
+      // Em vez de salvar a blobURL, salvamos o sceneId (para criar hotspot entre cenas)
+      event.dataTransfer.setData("sceneId", sceneId);
     });
 
-    // Configuración de SortableJS para manejar el drag and drop
-    /*new Sortable(thumbnailContainer, {
-        animation: 150,
-        onEnd: function (evt) {
-            updateOrderNumbers(); // Actualizar números después de reordenar
-        },
-    });*/
-});
+    // Imagem de miniatura
+    const imgThumbnail = document.createElement("img");
+    imgThumbnail.src = imageUrl;
+    imgThumbnail.classList.add("thumbnail");
 
-const menuItems = document.querySelectorAll('#menu ul li');
-
-menuItems.forEach((item, index) => {
-    item.addEventListener('click', () => {
-        // Ignorar clics en elementos deshabilitados
-        if (item.classList.contains('disabled')) {
-            return;
-        }
-
-        menuItems.forEach((el, idx) => {
-            if (idx < index) {
-                el.classList.remove('active', 'disabled');
-                el.classList.add('completed');  // Mantener como completado
-            } else if (idx === index) {
-                el.classList.add('active');
-                el.classList.remove('completed', 'disabled');  // Hacer activo, eliminar cualquier clase previa
-            } else if (idx === index + 1) {
-                el.classList.remove('active', 'disabled');  // Mantener el siguiente paso habilitado
-            } else {
-                el.classList.remove('active', 'completed');
-                el.classList.add('disabled');  // Desactivar los pasos que están después del siguiente
-            }
-        });
+    // Ao clicar na miniatura, carrega a cena
+    imgThumbnail.addEventListener("click", function () {
+      loadScene(sceneId);
     });
-});
 
-document.getElementById('searchBar').addEventListener('input', function() {
+    // Botão para excluir
+    const actionButtons = document.createElement("div");
+    actionButtons.classList.add("action-buttons");
+
+    const deleteButton = document.createElement("button");
+    deleteButton.innerHTML = "✖";
+    deleteButton.addEventListener("click", function (e) {
+      e.stopPropagation();
+
+      // Remove do array uploadedImages com base no índice do DOM
+      const index = Array.from(thumbnailWrapper.parentNode.children).indexOf(thumbnailWrapper);
+      uploadedImages.splice(index, 1);
+
+      // Remove o thumbnail
+      thumbnailWrapper.remove();
+
+      // (Opcional) Poderia remover a cena do tourConfig, se desejar
+      if (tourConfig.scenes[sceneId]) {
+        delete tourConfig.scenes[sceneId];
+      }
+
+      updateOrderNumbers();
+      checkEmptyThumbnails();
+    });
+    actionButtons.appendChild(deleteButton);
+
+    // Detalhes: ordem + nome
+    const detailsContainer = document.createElement("div");
+    detailsContainer.classList.add("thumbnail-details");
+
+    const orderNumber = document.createElement("span");
+    orderNumber.classList.add("order-number");
+    orderNumber.textContent = thumbnailContainer.children.length + 1;
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.placeholder = "Ambiente";
+    nameInput.classList.add("name-input");
+    nameInput.maxLength = 12;
+
+    detailsContainer.appendChild(orderNumber);
+    detailsContainer.appendChild(nameInput);
+
+    // Monta tudo
+    thumbnailWrapper.appendChild(imgThumbnail);
+    thumbnailWrapper.appendChild(actionButtons);
+    thumbnailWrapper.appendChild(detailsContainer);
+    thumbnailContainer.appendChild(thumbnailWrapper);
+
+    toggleSearchBar();
+  }
+
+  function checkEmptyThumbnails() {
+    if (thumbnailContainer.children.length === 0) {
+      document.getElementById("placeholder-text").style.display = "block";
+      resetViewer();
+      toggleSearchBar();
+    }
+  }
+
+  function resetViewer() {
+    // Exibe texto placeholder e pode limpar o viewer
+    document.getElementById("placeholder-text").style.display = "block";
+    document.getElementById("viewer").innerHTML = "";
+    tourViewer = null;
+  }
+
+  function updateOrderNumbers() {
+    const wrappers = document.querySelectorAll(".thumbnail-wrapper .order-number");
+    wrappers.forEach((orderNumber, index) => {
+      orderNumber.textContent = index + 1;
+    });
+  }
+
+  function toggleSearchBar() {
+    const searchBar = document.getElementById("searchBar");
+    const thumbnails = document.querySelectorAll(".thumbnail-wrapper");
+    searchBar.disabled = (thumbnails.length === 0);
+  }
+
+  // Drag & drop no contêiner do viewer
+  const viewerElement = document.getElementById("viewer");
+  viewerElement.addEventListener("dragover", event => {
+    event.preventDefault(); // Permite soltar
+  });
+
+  viewerElement.addEventListener("drop", event => {
+    event.preventDefault();
+    if (!tourViewer) return;
+
+    // Pega o sceneId que está sendo arrastado
+    const droppedSceneId = event.dataTransfer.getData("sceneId");
+    if (!droppedSceneId) return;
+
+    // Obter posição atual do viewer
+    const currentPitch = tourViewer.getPitch();
+    const currentYaw = tourViewer.getYaw();
+
+    // Pegar a cena atualmente carregada
+    // Precisamos descobrir qual sceneId está sendo exibido no momento
+    // Se você quiser manter isso, pode armazenar num global "activeSceneId" ao chamar loadScene
+    // Aqui, assumindo que o viewer possui 'config.sceneId' (não nativo do Pannellum, mas podemos trackear)
+    // Vamos tentar descobrir varrendo as scenes:
+    let activeSceneId = null;
+    for (const sid in tourConfig.scenes) {
+      // Comparar se o panorama do viewer bate com o panorama de cada scene
+      // ou manter global ao chamar loadScene(sid).
+      if (tourViewer && tourViewer.getConfig().panorama === tourConfig.scenes[sid].panorama) {
+        activeSceneId = sid;
+        break;
+      }
+    }
+    if (!activeSceneId) return;
+
+    // Usa API do Pannellum para coordenadas do clique
+    const coords = tourViewer.mouseEventToCoords(event);
+    if (!coords) return;
+
+    const pitch = coords[0];
+    const yaw = coords[1];
+
+    // Cria hotspot do tipo 'scene' apontando para droppedSceneId
+    const newHotspot = {
+      pitch,
+      yaw,
+      type: "scene",
+      text: "Ir a otra escena",
+      sceneId: droppedSceneId
+    };
+
+    // Adiciona o hotspot na cena atualmente ativa
+    const ok = addHotspotToScene(activeSceneId, newHotspot);
+    if (!ok) return; // Se já existia, paramos
+
+    // Recarrega o viewer (para atualizar o hotspot) mantendo pitch/yaw
+    const activeSceneConfig = tourConfig.scenes[activeSceneId];
+    document.getElementById("viewer").innerHTML = "";
+
+    tourViewer = pannellum.viewer("viewer", {
+      ...activeSceneConfig,
+      pitch: currentPitch,
+      yaw: currentYaw
+    });
+  });
+
+  // Menu do footer
+  const menuItems = document.querySelectorAll("#menu ul li");
+  menuItems.forEach(item => {
+    item.addEventListener("click", () => {
+      menuItems.forEach(el => el.classList.remove("active"));
+      item.classList.add("active");
+    });
+  });
+
+  // Buscador de ambientes
+  document.getElementById("searchBar").addEventListener("input", function () {
     const searchTerm = this.value.toLowerCase();
-    const thumbnails = document.querySelectorAll('.thumbnail-wrapper');
+    const thumbnails = document.querySelectorAll(".thumbnail-wrapper");
 
     thumbnails.forEach(thumbnail => {
-        const nameInput = thumbnail.querySelector('.name-input').value.toLowerCase();
-        if (nameInput.includes(searchTerm)) {
-            thumbnail.style.display = ''; // Mostrar miniatura
-        } else {
-            thumbnail.style.display = 'none'; // Ocultar miniatura
-        }
+      const nameInput = thumbnail.querySelector(".name-input").value.toLowerCase();
+      thumbnail.style.display = nameInput.includes(searchTerm) ? "" : "none";
     });
-});
+  });
 
-function toggleSearchBar() {
-    const searchBar = document.getElementById('searchBar');
-    const thumbnails = document.querySelectorAll('.thumbnail-wrapper');
-    
-    if (thumbnails.length > 0) {
-        searchBar.disabled = false; // Activar la barra de búsqueda
-    } else {
-        searchBar.disabled = true; // Desactivar la barra de búsqueda
-    }
-}
-
-document.getElementById('save').addEventListener('click', function() {
+  // Botão de salvar: envia ao backend
+  document.getElementById("save").addEventListener("click", function () {
     const formData = new FormData();
-    const projectNameElement = document.getElementById('project-name');
+    const projectNameElement = document.getElementById("project-name");
     const projectName = projectNameElement.textContent.trim();
-    const folderName = `${projectName}`;
-    formData.append('folderName', folderName);
+    const folderName = projectName;
 
-    const imagesData = getImagesData();
-    formData.append('imagesData', JSON.stringify(imagesData));
+    // Ajusta o autor do tour para o nome do projeto
+    tourConfig.default.author = projectName;
 
-    uploadedImages.forEach(file => formData.append('image', file));
+    // Pasta/projeto
+    formData.append("folderName", folderName);
 
-    fetch('/save-image', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            $.notify("Proyecto guardado exitosamente.", "success");
-            projectNameElement.innerHTML = `<a href="${data.viewer_url}" target="_blank">${projectName}</a>`;
-        } else {
-            $.notify("Hubo un error al guardar el proyecto.", "error");
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        $.notify("Hubo un error al guardar el proyecto.", "error");
+    // Adiciona as imagens
+    uploadedImages.forEach(file => {
+      formData.append("image", file);
     });
+
+    // Adiciona tourConfig completo
+    formData.append("tourConfig", JSON.stringify(tourConfig));
+
+    // Fetch ao backend
+    fetch("/save-image", {
+      method: "POST",
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          notyf.success("¡Proyecto guardado exitosamente!");
+          projectNameElement.innerHTML = `<a href="${data.viewer_url}" target="_blank">${projectName}</a>`;
+        } else {
+          notyf.error("Hubo un error al guardar el proyecto.");
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        notyf.error("Hubo un error al guardar el proyecto.");
+      });
+  });
 });
 
+// Botón para establecer el ángulo y el zoom actuales como predeterminados
+document.getElementById("setAngleButton").addEventListener("click", () => {
+  if (!tourViewer) {
+    notyf.error("No hay ninguna imagen cargada.");
+    return;
+  }
 
+  // Obtén los valores actuales del visor
+  const currentPitch = tourViewer.getPitch();
+  const currentYaw = tourViewer.getYaw();
+  const currentHfov = tourViewer.getHfov(); // Zoom actual
 
-function getImagesData() {
-    const imagesData = [];
-    const thumbnails = document.querySelectorAll('.thumbnail-wrapper');
+  // Encuentra la escena activa
+  let activeSceneId = null;
+  for (const sceneId in tourConfig.scenes) {
+    if (tourViewer.getConfig().panorama === tourConfig.scenes[sceneId].panorama) {
+      activeSceneId = sceneId;
+      break;
+    }
+  }
 
-    thumbnails.forEach((thumbnail, index) => {
-        const name = thumbnail.querySelector('.name-input').value;
-        const imagePath = thumbnail.querySelector('img').src;        
-        imagesData.push({
-            order: index + 1, // El índice actual representa el orden
-            name: name,
-            path: imagePath,
-        });
-    });
+  if (!activeSceneId) {
+    notyf.error("No se pudo identificar la escena activa.");
+    return;
+  }
 
-    return imagesData;
-}
+  // Actualiza los valores en la configuración de la escena activa
+  const sceneConfig = tourConfig.scenes[activeSceneId];
+  sceneConfig.pitch = currentPitch; // Guarda el pitch
+  sceneConfig.yaw = currentYaw;     // Guarda el yaw
+  sceneConfig.hfov = currentHfov;   // Guarda el zoom
+
+  notyf.success("¡Ángulo y zoom actualizados!");
+
+  // Opcional: recargar la escena para reflejar los cambios inmediatamente
+  tourViewer = pannellum.viewer("viewer", sceneConfig);
+});

@@ -18,20 +18,40 @@
                 <h2>Tour 360°</h2>
             </div>
             <ul class="menu">
-                <li class="active"><img class="icon" src="{{ url_for('static', filename='icons/dashboard.png') }}" alt=""></li>
-                <li><img class="icon" src="{{ url_for('static', filename='icons/user.png') }}" alt=""></li>
-                <li><img class="icon" src="{{ url_for('static', filename='icons/config.png') }}" alt=""></li>
+                <li class="active">
+                    <img 
+                        class="icon" 
+                        src="{{ url_for('static', filename='icons/dashboard.png') }}" 
+                        alt="Meus tours" 
+                        title="Meus tours">
+                </li>
+                <li>
+                    <a 
+                        href="https://joyceemiguel.wixstudio.com/houseway2/members-area/my/my-account" 
+                        target="_blank">
+                        <img 
+                            class="icon" 
+                            src="{{ url_for('static', filename='icons/user.png') }}" 
+                            alt="Conta" 
+                            title="Conta">
+                    </a>
+                </li>
             </ul>
+            
+            
         </aside>
 
         <main class="main-content">
             <header>
                 <h1>Meus tours</h1>
-                <input type="text" id="search-projects" placeholder="Buscar proyectos...">
+                <input type="text" id="search-projects" placeholder="Procurar projetos...">
             </header>
             <section class="projects" id="projects-container">
-                <!-- Replicar más tarjetas según necesidad -->
+                <div id="no-projects-message" class="no-projects-message">
+                    Crie um novo projeto para começar.
+                </div>
             </section>
+            
         </main>
         
         
@@ -78,5 +98,9 @@
         </aside>-->
     </div>
     <script src="{{ url_for('static', filename='js/projectsnew.js') }}"></script>
+    <script>
+        const userPlan = "{{ plan_name }}"; // El plan del usuario
+        const projectCount = {{ project_count }}; // Cantidad de proyectos del usuario
+    </script>    
 </body>
 </html>

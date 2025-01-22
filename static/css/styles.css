@@ -4,9 +4,9 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-color: #1c1c1e;
+    background-color: #2e2e2e;
     color: #f5f5f7;
-    overflow-x: hidden; /* Evita la barra de desplazamiento horizontal */
+    overflow: hidden; /* Evita la barra de desplazamiento horizontal */
 }
 
 #main-container {
@@ -26,7 +26,7 @@ body {
 #content-left {
     width: 40%; /* Fija el ancho del contenedor izquierdo */
     padding-right: 15px; 
-    border-right: 1px solid #3a3a3c; 
+    border-right: 1px solid #fff; 
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -49,15 +49,16 @@ body {
 }
 
 #uploadImageWrapper {
-    background-color: #5c6bc0; /* Color de fondo del botón */
-    color: #ffffff;
     padding: 12px 25px;
     font-size: 1em;
-    font-weight: bold;
-    border: none;
+    font-weight: 600;
+    text-align: center;
+    color: #fff;
+    background-color: transparent;
+    border: #80cdd9 solid;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    transition: background-color 0.3s ease;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     text-align: center;
     position: relative;
@@ -89,115 +90,85 @@ body {
     z-index: 2;
 }
 
-/*Miniaturas*/
+/*MINIATURAS -----------------------------------------*/
 #thumbnail-container-wrapper {
     display: flex;
-    justify-content: center; /* Centra las miniaturas horizontalmente */
-    align-items: center; /* Centra las miniaturas verticalmente */
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 10px 0;
-    white-space: nowrap;
-    max-width: 100%;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    overflow-y: auto; 
+    overflow-x: hidden;
+    padding: 10px; 
+    max-height: 100%;
+    width: 100%; 
     box-sizing: border-box;
-    height: 100%; /* Asegura que el contenedor ocupe todo el espacio vertical */
-}
-
-#thumbnail-container {
-    display: flex;
-    gap: 15px;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
-    padding: 0 10px; /* Añadir algo de espacio a los lados para que no esté pegado al borde */
-    align-items: center; /* Centra verticalmente las miniaturas dentro del contenedor */
+    max-height: calc(100vh - 250px); /* Ajustar según el diseño para limitar el alto */
 }
 
 .thumbnail-wrapper {
-    position: relative;
-    display: inline-block;
-    width: 150px;
-    text-align: center;
+    position: relative; /* Necesario para que el botón "X" se posicione en relación con este contenedor */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    padding: 5px;
+    margin-bottom: 10px; /* Separación entre elementos */
     overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    flex-shrink: 0;
-}
-
-
-.thumbnail-wrapper:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    margin-left: 10px;
 }
 
 .thumbnail {
-    width: 100%;
-    height: 120px; /* Ajustar la altura de las miniaturas */
+    width: 70px; /* Tamaño fijo de la imagen */
+    height: 70px;
+    border-radius: 4px;
     object-fit: cover;
-    cursor: pointer;
-    border: none;
-    transition: border 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Detalles de la miniatura (número e input) */
 .thumbnail-details {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Asegura que el número y el input estén cerca */
-    padding: 3px 5px;
-    background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-top: -2px; /* Asegurar que esté alineado al borde inferior */
-    box-sizing: border-box;
+    justify-content: space-between;
+    padding: 5px 10px;
+    gap: 10px; /* Añadir espacio entre elementos */
 }
 
 .order-number {
     font-weight: bold;
-    color: #000000;
-    margin-right: 2px; /* Reducir el espacio entre el número y el input */
-    flex-shrink: 0;
+    color: #333;
 }
 
 .name-input {
-    flex-grow: 1;
-    padding: 3px;
-    border-radius: 4px;
-    border: none;
-    background-color: transparent;
-    color: #000000;
-    font-size: 0.75em; /* Ajustar el tamaño del texto en el input */
+    padding: 10px 20px; /* Espaciado interno */
+    font-size: .8em;
+    border: 2px solid #ccc; /* Borde gris claro */
+    border-radius: 10px; /* Borde redondeado */
     outline: none;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    text-align: center; /* Centrado del texto */
 }
 
-.name-input::placeholder {
-    color: #a1a1aa;
-    font-size: 0.75em;
-}
-
-.name-input:focus {
-    box-shadow: none;
-}
-
-/* Botones de acción (eliminar) */
 .action-buttons {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    display: flex;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.thumbnail-wrapper:hover .action-buttons {
-    opacity: 1;
+    top: 0px;
+    right: 0px;
 }
 
 .action-buttons button {
+    background: transparent;
+    border: none;
+    border-radius: 50%; /* Asegura el estilo circular */
+    color: rgba(255, 0, 0, 0.8);
+    cursor: pointer;
+    padding: 5px 10px;
+    font-size: 14px;
+    box-shadow: none; /* Elimina cualquier sombra */
+    outline: none; /* Elimina cualquier contorno del navegador */
+    transition: background-color 0.3s ease;
+}
+
+.delete-button {
     background: rgba(255, 0, 0, 0.8);
     border: none;
     border-radius: 50%;
@@ -205,21 +176,14 @@ body {
     cursor: pointer;
     padding: 5px;
     font-size: 14px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
-
-.action-buttons button:hover {
-    background: rgba(255, 0, 0, 1);
-    transform: scale(1.1);
-}
-
-/**/
+/*FIN MINIATURAS -----------------------------------------*/
 
 #search-and-upload-wrapper {
     display: flex;
@@ -314,7 +278,7 @@ body {
 
 /* Estilo para el footer */
 footer {
-    background-color: #2c2c2e;
+    background-color: #2b2b2b;
     padding: 10px 15px;
     box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.3);
     position: sticky;
@@ -331,18 +295,25 @@ footer {
     align-items: center;
 }
 
-#footer-left #logo,#footer-left a {
+#footer-left #logo a {
     font-size: 1.2em;
     font-weight: 600;
     color: #f5f5f7;
     text-decoration: none;
 }
 
-#footer-left #project-name {
+#footer-left #project-name{
     color: #a1a1aa;
     font-size: 1em;
     margin-left: 5px;
 }
+
+.link{
+    color: #4A90E2;
+    font-size: 1em;
+    margin-left: 5px;
+}
+
 /* Menú de opciones en el footer */
 #menu {
     display: flex;
@@ -373,10 +344,11 @@ footer {
     border: 2px solid transparent; /* Borde negro para el paso activo */
 }
 
+/* Borde verde para pasos completados 
 #menu ul li.completed {
-    border: 2px solid #28a745; /* Borde verde para pasos completados */
-    color: #f5f5f7; /* Mantener el color claro */
-}
+    border: 2px solid #28a745; 
+    color: #f5f5f7;
+}*/
 
 #menu ul li.completed img {
     filter: none; /* Iconos en color completo */
@@ -428,35 +400,78 @@ footer {
     align-items: center;
 }
 
-#footer-right .btn, .btn-primary {
+.btn {
     margin-left: 10px;
-    padding: 5px 15px;
-    border: none;
+    padding: 10px;
+    font-size: 1em;
+    font-weight: 600;
     cursor: pointer;
     border-radius: 8px;
-    font-size: 1em;
+    border: #d98080 solid;
+    color: #fff;
+    text-align: center;
+    background-color: transparent;
     transition: background-color 0.3s ease;
 }
 
-.btn {
-    background-color: #3a3a3c;
-    color: #f5f5f7;
+.btn-primary {
+    margin-left: 10px;
+    padding: 10px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    border: #80cdd9 solid;
+    color: #fff;
+    text-align: center;
+    background-color: transparent;
+    transition: background-color 0.3s ease;
+
 }
 
 .btn:hover {
-    background-color: #4a4a4c;
-}
-
-.btn-primary {
-    background-color: #0a84ff;
-    color: white;
+    background-color: #d98080;
 }
 
 .btn-primary:hover {
-    background-color: #006fe0;
+    background-color: #80cdd9;
 }
 
 .notifyjs-corner .notifyjs-wrapper {
     font-weight: normal; /* Asegura que el texto no esté en negrita */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Ajusta la fuente según tus necesidades */
 }
+
+.hotspot {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(255, 69, 0, 0.8);
+    border-radius: 50%;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    transition: background-color 0.3s ease;
+}
+
+.hotspot:hover {
+    background-color: rgba(255, 69, 0, 1);
+}
+
+#viewer-container {
+    position: relative;
+  }
+  
+  #setAngleButton {
+    position: absolute;
+    bottom: 20px;
+    left: 15px;
+    z-index: 10; /* Asegúrate de que esté encima del visor */
+    padding: 20px;
+    font-size: 14px;
+    color: #fff;
+    border: none;
+    background-color: transparent; /* Azul estilo botón */
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    z-index: 1000;
+  }  

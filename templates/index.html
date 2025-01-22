@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf/notyf.min.css">
     <script src="https://cdn.jsdelivr.net/npm/notyf/notyf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
 
 </head>
+
 <body>
     <div id="main-container">
         <div id="content">
@@ -22,18 +26,21 @@
                     <div id="search-bar-wrapper">
                         <input type="text" id="searchBar" placeholder="Buscar ambientes..." disabled>
                     </div>
-                </div>                
-                
+                </div>
+
                 <div id="thumbnail-container-wrapper">
                     <div id="thumbnail-container">
                         <!-- Aquí se agregarán las miniaturas -->
                     </div>
                 </div>
-                
+
             </div>
             <div id="viewer-container">
                 <div id="viewer">
                     <div id="placeholder-text">Su Tour 360° será exhibido aquí.</div>
+                </div>                  
+                <div>
+                    <button id="setAngleButton">📐</button>
                 </div>
             </div>
         </div>
@@ -46,8 +53,14 @@
         <div id="link-container"></div>
         <div id="menu">
             <ul>
-                <li class="active"><img src="{{ url_for('static', filename='icons/360.png') }}" alt="Ambientes"><span>Ambientes</span></li>
-                <li class=""><img src="{{ url_for('static', filename='icons/pontos.png') }}" alt="Pontos"><span>Pontos</span></li>
+                <li class="active"><img src="{{ url_for('static', filename='icons/360.png') }}"
+                        alt="Ambientes"><span>Ambientes</span></li>
+                <li class=""><img src="{{ url_for('static', filename='icons/conect.png') }}"
+                        alt="Pontos"><span>Conexão</span></li>
+                <li class=""><img src="{{ url_for('static', filename='icons/info.png') }}"
+                        alt="Pontos"><span>Info</span></li>
+                <li class=""><img src="{{ url_for('static', filename='icons/link.png') }}"
+                        alt="Pontos"><span>URL</span></li>
             </ul>
         </div>
         <div id="footer-right">
@@ -56,9 +69,17 @@
         </div>
     </footer>
 
+    <script>
+        const PROJECT_NAME = "{{ project_name }}";
+    </script>
+    <!--
     <script src="{{ url_for('static', filename='js/three.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/panolens.min.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <script src="{{ url_for('static', filename='js/marzipano.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bowser.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/screenfull.js') }}"></script>
+    -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script> <!-- Archivo JS externo -->
 </body>
+
 </html>
