@@ -565,6 +565,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.success) {
           notyf.success("Projeto salvo com sucesso!");
           projectNameElement.innerHTML = `<a href="${data.viewer_url}" target="_blank">${projectName}</a>`;
+
+          if (navigator.clipboard && window.isSecureContext) {
+            // Usar la API del Portapapeles si está disponible y el contexto es seguro
+            navigator.clipboard.writeText(data.viewer_url)
+              .then(() => {
+                notyf.success("URL copiada para a área de transferência!");
+              })
+              .catch(err => {
+                console.error("Erro ao copiar para a área de transferência:", err);
+                notyf.error("Não foi possível copiar a URL para a área de transferência.");
+              });
+          }
+
+          
         } else {
           notyf.error("Houve um erro ao salvar o projeto.");
         }
