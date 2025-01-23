@@ -47,8 +47,47 @@ function createScene(file) {
     tourConfig.default.firstScene = sceneId;
   }
 
+  // Actualizar la cantidad de imágenes en el servidor
+  updateMetadataJson("images", Object.keys(tourConfig.scenes).length);
+
   return { sceneId, imageUrl };
 }
+
+// Agregar esta función en main.js
+/**
+ * updateMetadataJson:
+ * Actualiza los campos 'images' y 'hotspots' en el metadata.json del proyecto.
+ * @param {String} projectName - Nombre del proyecto.
+ * @param {Number} imagesCount - Cantidad de imágenes.
+ * @param {Number} hotspotsCount - Cantidad de hotspots.
+ */
+function updateMetadataJson(projectName, imagesCount, hotspotsCount) {
+  fetch('/api/update-metadata', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+          projectName: PROJECT_NAME,
+          images: imagesCount,
+          hotspots: hotspotsCount,
+      }),
+  })
+  .then(response => response.json())
+  .then(data => {
+      if (data.success) {
+          console.log(`Metadata para el proyecto "${projectName}" actualizada correctamente.`);
+      } else {
+          console.error('Error al actualizar metadata:', data.message);
+      }
+  })
+  .catch(error => {
+      console.error('Error al enviar la actualización del metadata:', error);
+  });
+}
+
+
+
 
 /**
  * loadScene:
@@ -76,7 +115,13 @@ function loadScene(sceneId) {
   currentSceneHotspots.forEach(hotspot => {
     if (hotspot.type === "scene") {
       hotspot.createTooltipFunc = function(hotSpotDiv) {
-        hotSpotDiv.classList.add("custom-tooltip");
+        // Aplicar clase CSS personalizada si está definida
+        if (hotspot.cssClass) {
+          hotSpotDiv.classList.add(hotspot.cssClass);
+        } else {
+          hotSpotDiv.classList.add("default-tooltip"); // Clase por defecto si no hay personalizada
+        }
+
         hotSpotDiv.innerHTML = hotspot.text;
         hotSpotDiv.style.cursor = "pointer";
 
@@ -91,6 +136,7 @@ function loadScene(sceneId) {
   // Recarga los hotspots para reflejar los cambios
   addDraggableHotspots(sceneId);
 }
+
 
 
 
@@ -111,9 +157,28 @@ function addHotspotToScene(sceneId, hotspot) {
     notyf.error("Já existe um hotspot nesta posição.");
     return false;
   }
-  hotspot.cssClass = "custom-hotspot";
+
+  // Configuración de createTooltipFunc para que el hotspot tenga funcionalidad
+  hotspot.createTooltipFunc = function(hotSpotDiv) {
+    hotSpotDiv.classList.add("custom-tooltip");
+    hotSpotDiv.innerHTML = hotspot.text;
+    hotSpotDiv.style.cursor = "pointer";
+
+    // Configura el evento de clic para navegar entre escenas
+    hotSpotDiv.addEventListener("click", function() {
+      loadScene(hotspot.sceneId);
+    });
+  };
+
   // Agrega el nuevo hotspot
   sceneConfig.hotSpots.push(hotspot);
+
+  // Actualizar la cantidad total de hotspots en el servidor
+  const totalHotspots = Object.values(tourConfig.scenes).reduce(
+    (sum, scene) => sum + (scene.hotSpots?.length || 0),
+    0
+  );
+  updateMetadataJson("hotspots", totalHotspots);
 
   // Cambia el borde del thumbnail correspondiente
   const thumbnailWrapper = document.querySelector(`[data-scene-id="${sceneId}"]`);
@@ -130,23 +195,6 @@ function addHotspotToScene(sceneId, hotspot) {
   const viewerElement = document.getElementById("viewer");
   viewerElement.innerHTML = ""; // Limpia el visor
 
-
-
-//---------------------------------------------------------------
-//---------------------------------------------------------------
-//---------------------------------------------------------------
-//  tourViewer = pannellum.viewer("viewer", {
-//    ...sceneConfig, // Configuración de la escena actualizada con el nuevo hotspot
-//    pitch: currentPitch, // Mantén el pitch actual
-//    yaw: currentYaw,     // Mantén el yaw actual
-//    hfov: currentHfov    // Mantén el zoom actual
-//  });
-//---------------------------------------------------------------
-//---------------------------------------------------------------
-//---------------------------------------------------------------
-
-
-
   tourViewer = pannellum.viewer("viewer", {
     ...tourConfig, // Pasa todo el tourConfig para mantener las escenas conectadas
     default: tourConfig.default,
@@ -155,7 +203,6 @@ function addHotspotToScene(sceneId, hotspot) {
     yaw: currentYaw,     // Mantén el yaw actual
     hfov: currentHfov    // Mantén el zoom actual
   });
-  
 
   // Asegurar que todos los hotspots sean `draggable`, incluidos los nuevos
   addDraggableHotspots(sceneId);
@@ -178,12 +225,13 @@ function addHotspotToScene(sceneId, hotspot) {
           thumbnailWrapper.style.border = "4px solid #80cdd9"; // Borde original
         }
       }
-    } else {
-      //notyf.error("No hay ningún hotspot en esta posición.");
     }
   });
+
   return true;
 }
+
+
 
 function addDraggableHotspots(sceneId) {
   const sceneConfig = tourConfig.scenes[sceneId];
@@ -228,6 +276,13 @@ function removeHotspot(sceneId, hotspotId) {
   // Filtra los hotspots y elimina el que coincida con el ID
   sceneConfig.hotSpots = sceneConfig.hotSpots.filter(hotspot => hotspot.id !== hotspotId);
 
+  // Actualizar la cantidad total de hotspots en el servidor
+  const totalHotspots = Object.values(tourConfig.scenes).reduce(
+    (sum, scene) => sum + (scene.hotSpots?.length || 0),
+    0
+  );
+  updateMetadataJson("hotspots", totalHotspots);
+
   // Obtén los valores actuales del visor
   const currentPitch = tourViewer.getPitch();
   const currentYaw = tourViewer.getYaw();
@@ -245,6 +300,7 @@ function removeHotspot(sceneId, hotspotId) {
     hfov: currentHfov     // Mantén el zoom actual
   });
 }
+
 
 
 function addDraggableHotspots(sceneId) {
@@ -376,6 +432,9 @@ document.addEventListener("DOMContentLoaded", () => {
         delete tourConfig.scenes[sceneId];
       }
   
+      // Atualizar a quantidade de imagens no servidor
+      updateMetadataJson("images", Object.keys(tourConfig.scenes).length);
+  
       updateOrderNumbers();
       checkEmptyThumbnails();
     });
@@ -410,7 +469,8 @@ document.addEventListener("DOMContentLoaded", () => {
     thumbnailContainer.appendChild(thumbnailWrapper);
   
     toggleSearchBar();
-  }  
+  }
+    
 
   function checkEmptyThumbnails() {
     if (thumbnailContainer.children.length === 0) {
@@ -541,53 +601,52 @@ document.addEventListener("DOMContentLoaded", () => {
     const projectName = projectNameElement.textContent.trim();
     const folderName = projectName;
 
-    // Ajusta o autor do tour para o nome do projeto
+    // Ajusta el autor del tour al nombre del proyecto
     tourConfig.default.author = projectName;
 
-    // Pasta/projeto
+    // Agrega la carpeta/proyecto al FormData
     formData.append("folderName", folderName);
 
-    // Adiciona as imagens
+    // Agrega las imágenes al FormData
     uploadedImages.forEach(file => {
-      formData.append("image", file);
+        formData.append("image", file);
     });
 
-    // Adiciona tourConfig completo
+    // Agrega el tourConfig completo al FormData
     formData.append("tourConfig", JSON.stringify(tourConfig));
 
-    // Fetch ao backend
+    // Realiza la solicitud al backend para guardar
     fetch("/save-image", {
-      method: "POST",
-      body: formData
+        method: "POST",
+        body: formData
     })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          notyf.success("Projeto salvo com sucesso!");
-          projectNameElement.innerHTML = `<a href="${data.viewer_url}" target="_blank">${projectName}</a>`;
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                notyf.success("Projeto salvo com sucesso!");
+                projectNameElement.innerHTML = `<a href="${data.viewer_url}" target="_blank">${projectName}</a>`;
 
-          if (navigator.clipboard && window.isSecureContext) {
-            // Usar la API del Portapapeles si está disponible y el contexto es seguro
-            navigator.clipboard.writeText(data.viewer_url)
-              .then(() => {
-                notyf.success("URL copiada para a área de transferência!");
-              })
-              .catch(err => {
-                console.error("Erro ao copiar para a área de transferência:", err);
-                notyf.error("Não foi possível copiar a URL para a área de transferência.");
-              });
-          }
+                if (navigator.clipboard && window.isSecureContext) {
+                    // Copia la URL al portapapeles si es seguro hacerlo
+                    navigator.clipboard.writeText(data.viewer_url)
+                        .then(() => {
+                            notyf.success("URL copiada para a área de transferência!");
+                        })
+                        .catch(err => {
+                            console.error("Error al copiar al portapapeles:", err);
+                            notyf.error("No fue posible copiar la URL al portapapeles.");
+                        });
+                }
+            } else {
+                notyf.error("Hubo un error al guardar el proyecto.");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            notyf.error("Hubo un error al guardar el proyecto.");
+        });
+});
 
-          
-        } else {
-          notyf.error("Houve um erro ao salvar o projeto.");
-        }
-      })
-      .catch(error => {
-        console.error("Error:", error);
-        notyf.error("Houve um erro ao salvar o projeto.");
-      });
-  });
 });
 
 // Botón para establecer el ángulo y el zoom actuales como predeterminados

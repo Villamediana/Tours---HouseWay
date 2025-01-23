@@ -129,58 +129,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const projectDescription = project.description || 'Sem descrição disponível';
         const projectLatitude = project.latitude || '';
         const projectLongitude = project.longitude || '';
-
-        // Crear la estructura de la tarjeta del proyecto
-        const projectCard = document.createElement('div');
-        projectCard.classList.add('project-card');
-        projectCard.setAttribute('title', projectDescription); // Mostrar la descripción como tooltip
-
-        // Crear el encabezado de la tarjeta
-        const cardHeader = document.createElement('div');
-        cardHeader.classList.add('card-header');
-
-        const title = document.createElement('h3');
-        title.textContent = projectName;
-
-        title.addEventListener('click', () => {
-            window.location.href = `/project/${projectName}`; // Redirige al creador pasando el nombre del proyecto
-        });
-
-        cardHeader.appendChild(title);
-        projectCard.appendChild(cardHeader);
-
-        // Añadir los elementos a la tarjeta
-        projectsContainer.appendChild(projectCard);
-    }
-
-
-    function addProjectCard(project) {
-        const projectName = project.name;
-        const projectDescription = project.description || 'Sem descrição disponível';
-        const projectLatitude = project.latitude || '';
-        const projectLongitude = project.longitude || '';
-
+    
         // Crear la estructura de la tarjeta del proyecto
         const projectCard = document.createElement('div');
         projectCard.classList.add('project-card');
         projectCard.setAttribute('title', projectDescription); // Tooltip con la descripción del proyecto
-
+    
         // Crear el encabezado de la tarjeta
         const cardHeader = document.createElement('div');
         cardHeader.classList.add('card-header');
-
+    
         const title = document.createElement('h3');
         title.textContent = projectName;
-
+    
         title.addEventListener('click', () => {
             window.location.href = `/project/${projectName}`; // Redirige al creador pasando el nombre del proyecto
         });
-
+    
         // Botón de eliminar
         const deleteButton = document.createElement('button');
         deleteButton.textContent = '❌';
         deleteButton.classList.add('delete-btn');
-
+    
         // Evento para eliminar el proyecto
         deleteButton.addEventListener('click', (event) => {
             event.stopPropagation(); // Prevenir la redirección cuando se hace clic en eliminar
@@ -188,49 +158,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 deleteProject(projectName, projectCard);
             }
         });
-
+    
         cardHeader.appendChild(title);
         cardHeader.appendChild(deleteButton);
-
-        // Nombre del cliente (escrito manualmente)
+    
+        // Nombre del cliente
         const clientName = document.createElement('p');
-        clientName.textContent = "HouseWay"; // Valor escrito a mano
-
-        // Crear la sección de estadísticas (valores escritos manualmente)
-        const stats = document.createElement('div');
-        stats.classList.add('stats');
-
-        const assignedStat = document.createElement('div');
-        assignedStat.classList.add('stat');
-        assignedStat.innerHTML = `<strong>0</strong> Imagens`;
-
-        const startedStat = document.createElement('div');
-        startedStat.classList.add('stat');
-        startedStat.innerHTML = `<strong>0</strong> Conexões feitas`;
-
-        const completedStat = document.createElement('div');
-        completedStat.classList.add('stat');
-        completedStat.innerHTML = `<strong>0</strong> Ambientes`;
-
-        stats.appendChild(assignedStat);
-        stats.appendChild(startedStat);
-        stats.appendChild(completedStat);
-
-        // Crear la barra de progreso (valor escrito a mano)
+        clientName.textContent = "HouseWay"; // Valor estático
+    
+        // Crear la barra de progreso (opcional, si decides mantenerla)
         const progressBar = document.createElement('div');
         progressBar.classList.add('progress-bar');
-
+    
         const progressSpan = document.createElement('span');
-        progressSpan.style.width = `0%`; // Valor escrito a mano
-
+        progressSpan.style.width = `0%`; // Por defecto
+    
         progressBar.appendChild(progressSpan);
-
+    
         // Añadir los elementos a la tarjeta
         projectCard.appendChild(cardHeader);
         projectCard.appendChild(clientName);
-        projectCard.appendChild(stats);
         projectCard.appendChild(progressBar);
-
+    
         // Añadir el evento de click para redirigir al creador de tours con el nombre del proyecto
         projectCard.addEventListener('click', () => {
             editingProject = projectName;
@@ -241,10 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('create-project-btn').textContent = 'Salvar';
             document.querySelector('.form-container h2').textContent = 'Editar';
         });
-
+    
         // Añadir la tarjeta al contenedor de proyectos
         projectsContainer.appendChild(projectCard);
     }
+    
+    
 
     function deleteProject(projectName, projectWrapper) {
         fetch('/api/delete-project', {
@@ -278,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.json())
             .then(projects => {
                 const noProjectsMessage = document.getElementById('no-projects-message');
-                
+    
                 if (projects.length === 0) {
                     // Si no hay proyectos, muestra el mensaje
                     noProjectsMessage.style.display = 'block';
@@ -286,14 +237,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Si hay proyectos, oculta el mensaje y agrega las tarjetas
                     noProjectsMessage.style.display = 'none';
                     projects.forEach(project => {
-                        addProjectCard(project);
+                        // Asegurarse de que los campos de imágenes y hotspots existan
+                        const projectData = {
+                            name: project.name,
+                            description: project.description || '',
+                            latitude: project.latitude || '',
+                            longitude: project.longitude || '',
+                            images: project.images || 0, // Número de imágenes
+                            hotspots: project.hotspots || 0 // Número de hotspots
+                        };
+                        addProjectCard(projectData);
                     });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                notyf.error('Erro ao carregar projetos. Tente novamente.');
             });
     }
+    
     
     const menuItems = document.querySelectorAll('.menu li');
 
@@ -327,3 +289,5 @@ menuItems.forEach(item => {
     // Cargar los proyectos al inicio
     fetchProjects();
 });
+
+

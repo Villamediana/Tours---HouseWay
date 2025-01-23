@@ -366,7 +366,6 @@ def list_projects():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/create-project', methods=['POST'])
 def create_project():
     try:
@@ -386,7 +385,8 @@ def create_project():
                 "project_latitude": latitude,
                 "project_longitude": longitude,
                 "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "images": []
+                "images": 0,  # Inicializamos en 0
+                "hotspots": 0  # Inicializamos en 0
             }
             metadata_path = os.path.join(project_path, 'metadata.json')
             with open(metadata_path, 'w') as json_file:
@@ -561,7 +561,7 @@ def create_viewer_html(folder_path, tour_config):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Visualizador Tour 360°</title>
         <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
+        <link rel="stylesheet" href="../../../css/pannellum.css">
     </head>
     <body>
         <div id="viewer" style="width: 100%; height: 100vh;"></div>
