@@ -27,7 +27,11 @@ let sceneCounter = 0;
  */
 function createScene(file) {
   const sceneId = "scene-" + (++sceneCounter);
-  const imageUrl = URL.createObjectURL(file);
+  console.log(file.name);
+  //const imageUrl = URL.createObjectURL(file);
+
+  const fileName = file.name;
+  const imageUrl = `${URL.createObjectURL(file)}#${encodeURIComponent(fileName)}`;
 
   const sceneConfig = {
     type: "equirectangular",
@@ -47,47 +51,8 @@ function createScene(file) {
     tourConfig.default.firstScene = sceneId;
   }
 
-  // Actualizar la cantidad de imágenes en el servidor
-  updateMetadataJson("images", Object.keys(tourConfig.scenes).length);
-
   return { sceneId, imageUrl };
 }
-
-// Agregar esta función en main.js
-/**
- * updateMetadataJson:
- * Actualiza los campos 'images' y 'hotspots' en el metadata.json del proyecto.
- * @param {String} projectName - Nombre del proyecto.
- * @param {Number} imagesCount - Cantidad de imágenes.
- * @param {Number} hotspotsCount - Cantidad de hotspots.
- */
-function updateMetadataJson(projectName, imagesCount, hotspotsCount) {
-  fetch('/api/update-metadata', {
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-          projectName: PROJECT_NAME,
-          images: imagesCount,
-          hotspots: hotspotsCount,
-      }),
-  })
-  .then(response => response.json())
-  .then(data => {
-      if (data.success) {
-          console.log(`Metadata para el proyecto "${projectName}" actualizada correctamente.`);
-      } else {
-          console.error('Error al actualizar metadata:', data.message);
-      }
-  })
-  .catch(error => {
-      console.error('Error al enviar la actualización del metadata:', error);
-  });
-}
-
-
-
 
 /**
  * loadScene:
@@ -178,7 +143,6 @@ function addHotspotToScene(sceneId, hotspot) {
     (sum, scene) => sum + (scene.hotSpots?.length || 0),
     0
   );
-  updateMetadataJson("hotspots", totalHotspots);
 
   // Cambia el borde del thumbnail correspondiente
   const thumbnailWrapper = document.querySelector(`[data-scene-id="${sceneId}"]`);
@@ -281,7 +245,6 @@ function removeHotspot(sceneId, hotspotId) {
     (sum, scene) => sum + (scene.hotSpots?.length || 0),
     0
   );
-  updateMetadataJson("hotspots", totalHotspots);
 
   // Obtén los valores actuales del visor
   const currentPitch = tourViewer.getPitch();
@@ -387,89 +350,70 @@ document.addEventListener("DOMContentLoaded", () => {
    * Cria a miniatura, a torna arrastável e associa eventos de clique/arraste.
    * Recebe o sceneId e a URL blob para exibir no <img>.
    */
-  function addThumbnail(sceneId, imageUrl) {
-    const thumbnailWrapper = document.createElement("div");
-    thumbnailWrapper.classList.add("thumbnail-wrapper");
-    thumbnailWrapper.id = "thumbnail-" + thumbnailIdCounter++;
-  
-    // Armazena o sceneId no data-attribute
-    thumbnailWrapper.dataset.sceneId = sceneId;
-  
-    // Torna a miniatura arrastável
-    thumbnailWrapper.setAttribute("draggable", true);
-    thumbnailWrapper.addEventListener("dragstart", event => {
-      event.dataTransfer.setData("sceneId", sceneId);
-    });
-  
-    // Imagem de miniatura
-    const imgThumbnail = document.createElement("img");
-    imgThumbnail.src = imageUrl;
-    imgThumbnail.classList.add("thumbnail");
-  
-    // Ao clicar na miniatura, carrega a cena
-    imgThumbnail.addEventListener("click", function () {
-      loadScene(sceneId);
-    });
-  
-    // Botão para excluir
-    const actionButtons = document.createElement("div");
-    actionButtons.classList.add("action-buttons");
-  
-    const deleteButton = document.createElement("button");
-    deleteButton.innerHTML = "✖";
-    deleteButton.addEventListener("click", function (e) {
-      e.stopPropagation();
-  
-      // Remove do array uploadedImages com base no índice do DOM
-      const index = Array.from(thumbnailWrapper.parentNode.children).indexOf(thumbnailWrapper);
-      uploadedImages.splice(index, 1);
-  
-      // Remove o thumbnail
-      thumbnailWrapper.remove();
-  
-      // Remove a cena do tourConfig
-      if (tourConfig.scenes[sceneId]) {
-        delete tourConfig.scenes[sceneId];
-      }
-  
-      // Atualizar a quantidade de imagens no servidor
-      updateMetadataJson("images", Object.keys(tourConfig.scenes).length);
-  
-      updateOrderNumbers();
-      checkEmptyThumbnails();
-    });
-    actionButtons.appendChild(deleteButton);
-  
-    // Detalhes: ordem + nome
-    const detailsContainer = document.createElement("div");
-    detailsContainer.classList.add("thumbnail-details");
-  
-    const orderNumber = document.createElement("span");
-    orderNumber.classList.add("order-number");
-    orderNumber.textContent = thumbnailContainer.children.length + 1;
-  
-    const nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.placeholder = "Ambiente";
-    nameInput.classList.add("name-input");
-    nameInput.maxLength = 20;
-  
-    // Atualiza o nome da cena quando o usuário digita no input
-    nameInput.addEventListener("input", function () {
-      tourConfig.scenes[sceneId].name = nameInput.value || "Ambiente sem nome";
-    });
-  
-    detailsContainer.appendChild(orderNumber);
-    detailsContainer.appendChild(nameInput);
-  
-    // Monta tudo
-    thumbnailWrapper.appendChild(imgThumbnail);
-    thumbnailWrapper.appendChild(actionButtons);
-    thumbnailWrapper.appendChild(detailsContainer);
-    thumbnailContainer.appendChild(thumbnailWrapper);
-  
-    toggleSearchBar();
-  }
+  function addThumbnail(sceneId, imageUrl, sceneName) {
+            const thumbnailContainer = document.getElementById("thumbnail-container");
+    
+            // Crear el contenedor de la miniatura
+            const thumbnailWrapper = document.createElement("div");
+            thumbnailWrapper.classList.add("thumbnail-wrapper");
+            thumbnailWrapper.id = `thumbnail-${thumbnailIdCounter++}`;
+            thumbnailWrapper.dataset.sceneId = sceneId;
+    
+            // Hacer la miniatura arrastrable
+            thumbnailWrapper.setAttribute("draggable", true);
+            thumbnailWrapper.addEventListener("dragstart", event => {
+                event.dataTransfer.setData("sceneId", sceneId);
+            });
+    
+            // Crear la imagen de la miniatura
+            const imgThumbnail = document.createElement("img");
+            imgThumbnail.src = imageUrl;
+            imgThumbnail.alt = sceneName;
+            imgThumbnail.classList.add("thumbnail");
+    
+            // Crear detalles de la miniatura
+            const detailsContainer = document.createElement("div");
+            detailsContainer.classList.add("thumbnail-details");
+    
+            const orderNumber = document.createElement("span");
+            orderNumber.classList.add("order-number");
+            orderNumber.textContent = thumbnailContainer.children.length + 1;
+    
+            const nameInput = document.createElement("input");
+            nameInput.type = "text";
+            nameInput.placeholder = "Nombre de la escena";
+            nameInput.value = sceneName;
+            nameInput.classList.add("name-input");
+            nameInput.maxLength = 20;
+    
+            // Actualizar el nombre de la escena cuando se edita el input
+            nameInput.addEventListener("input", function () {
+                const tourConfig = window.tourConfig || {};
+                if (tourConfig.scenes && tourConfig.scenes[sceneId]) {
+                    tourConfig.scenes[sceneId].name = nameInput.value || `Escena ${sceneId}`;
+                }
+            });
+    
+            // Botón para eliminar la miniatura
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "✖";
+            deleteButton.classList.add("delete-button");
+            deleteButton.addEventListener("click", (e) => {
+                e.stopPropagation();
+                thumbnailWrapper.remove(); // Elimina la miniatura del DOM
+                console.log(`Escena eliminada: ${sceneId}`);
+            });
+    
+            // Ensamblar la miniatura
+            detailsContainer.appendChild(orderNumber);
+            detailsContainer.appendChild(nameInput);
+            thumbnailWrapper.appendChild(imgThumbnail);
+            thumbnailWrapper.appendChild(detailsContainer);
+            thumbnailWrapper.appendChild(deleteButton);
+    
+            // Añadir al contenedor de miniaturas
+            thumbnailContainer.appendChild(thumbnailWrapper);
+        }
     
 
   function checkEmptyThumbnails() {

@@ -55,6 +55,9 @@
             data-step="5">
             <span id="logo"><a href="/">HouseWay Tour |</a></span>
             <span id="project-name">{{ project_name }}</span>
+            <a class="link" href="/static/users/{{ user_id }}/{{ project_name }}/index.html" target="_blank">
+                {{ project_name }}
+            </a>            
         </div>
         <div id="link-container"></div>
         <div id="menu">
@@ -80,62 +83,121 @@
     </footer>
 
     <script>
-        const PROJECT_NAME = "{{ project_name }}";
-    </script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script> <!-- Archivo JS externo -->
+    const PROJECT_NAME = "{{ project_name }}";
+    const USER_ID = "{{ user_id }}";
 
-    <!-- Script para inicializar o tutorial -->
-    <script>
-        document.getElementById("cancel").addEventListener("click", () => {
-            // Pregunta al usuario si quiere guardar antes de salir
-            const confirmSave = confirm("Você quer salvar antes de sair?");
+    async function loadTourConfig(projectName, userId) {
+        const filePath = `/static/users/${userId}/${projectName}/tourConfig.json`;
 
-            if (confirmSave) {
-                // Simula el clic en el botón Guardar
-                document.getElementById("save").click();
-                window.location.href = "/";
-            } else {
-                // Redirige a la página principal
-                window.location.href = "/";
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) {
+                console.error(`Error al cargar tourConfig.json: ${response.status}`);
+                return;
             }
+
+            const tourConfig = await response.json();
+            console.log("Tour Config cargado:", tourConfig);
+
+            // Reemplazar panorama con blob URLs antes de pasarlo a createScene
+            for (const [sceneId, sceneData] of Object.entries(tourConfig.scenes)) {
+                const imageUrl = `/static/users/${userId}/${projectName}/${sceneData.panorama.replace('./', '')}`;
+                
+                // Cargar la imagen como blob
+                const blobResponse = await fetch(imageUrl);
+                if (!blobResponse.ok) {
+                    console.error(`Error al cargar la imagen ${imageUrl}: ${blobResponse.status}`);
+                    continue;
+                }
+                const blob = await blobResponse.blob();
+
+                // Crear un objeto File simulado
+                const file = new File([blob], sceneData.panorama.split('/').pop(), { type: blob.type });
+
+                // Pasar el archivo al createScene
+                createScene(file);
+
+                // Crear la miniatura para la escena
+                addThumbnail(sceneId, imageUrl, sceneData.name || "Sin nombre");
+
+                // Añadir los hotspots de la escena
+                if (sceneData.hotSpots) {
+                    sceneData.hotSpots.forEach(hotspot => {
+                        addHotspotToScene(sceneId, hotspot);
+                    });
+                }
+            }
+
+            // Cargar la primera escena con sus valores definidos
+            if (tourConfig.default.firstScene) {
+                const firstScene = tourConfig.scenes[tourConfig.default.firstScene];
+                loadScene(tourConfig.default.firstScene, {
+                    pitch: firstScene.pitch || 0,
+                    yaw: firstScene.yaw || 0,
+                    hfov: firstScene.hfov || 120,
+                });
+            }
+        } catch (error) {
+            console.error("Error al reconstruir el tour desde tourConfig.json:", error);
+        }
+    }
+
+    // Función para añadir una miniatura
+    function addThumbnail(sceneId, imageUrl, sceneName) {
+        const thumbnailContainer = document.getElementById("thumbnail-container");
+
+        // Crear el contenedor de la miniatura
+        const thumbnailWrapper = document.createElement("div");
+        thumbnailWrapper.classList.add("thumbnail-wrapper");
+        thumbnailWrapper.dataset.sceneId = sceneId;
+
+        // Crear la imagen de la miniatura
+        const imgThumbnail = document.createElement("img");
+        imgThumbnail.src = imageUrl;
+        imgThumbnail.alt = sceneName;
+        imgThumbnail.classList.add("thumbnail");
+
+        // Crear los detalles de la miniatura
+        const detailsContainer = document.createElement("div");
+        detailsContainer.classList.add("thumbnail-details");
+
+        const sceneTitle = document.createElement("span");
+        sceneTitle.textContent = sceneName;
+        sceneTitle.classList.add("scene-title");
+
+        // Botón para eliminar la miniatura (opcional)
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "✖";
+        deleteButton.classList.add("delete-button");
+        deleteButton.addEventListener("click", (e) => {
+            e.stopPropagation();
+            thumbnailWrapper.remove(); // Elimina la miniatura del DOM
+            console.log(`Escena eliminada: ${sceneId}`);
         });
 
-
-
-        // Inicializa o tutorial interativo
-        document.addEventListener("DOMContentLoaded", () => {
-            // Verifica se o tutorial já foi completado
-            const hasCompletedTutorial = localStorage.getItem("tutorialCompleted");
-
-            // Inicia automaticamente caso não tenha sido completado
-            if (!hasCompletedTutorial) {
-                startTutorial();
-                localStorage.setItem("tutorialCompleted", "true"); // Marca como completo
-            }
+        // Añadir el evento de clic para cargar la escena
+        imgThumbnail.addEventListener("click", () => {
+            loadScene(sceneId);
         });
 
-        // Função para iniciar o tutorial
-        function startTutorial() {
-            introJs()
-                .setOptions({
-                    nextLabel: "Próximo",
-                    prevLabel: "Anterior",
-                    skipLabel: "x", // Ícone para fechar
-                    doneLabel: "Concluir"
-                })
-                .start();
-        }
-    </script>
-    <style>
-        /* Estilo do texto nos tooltips */
-        .introjs-tooltiptext {
-            color: #000 !important;
-            font-size: 16px !important;
-            line-height: 1.5 !important;
-            font-family: 'Nunito', sans-serif !important;
-            text-align: center !important;
-        }
-    </style>
+        // Ensamblar la miniatura
+        detailsContainer.appendChild(sceneTitle);
+        thumbnailWrapper.appendChild(imgThumbnail);
+        thumbnailWrapper.appendChild(detailsContainer);
+        thumbnailWrapper.appendChild(deleteButton);
+
+        // Añadir al contenedor de miniaturas
+        thumbnailContainer.appendChild(thumbnailWrapper);
+    }
+
+    // Llama a la función al cargar la página
+    document.addEventListener("DOMContentLoaded", () => {
+        loadTourConfig(PROJECT_NAME, USER_ID);
+    });
+</script>
+
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 
 </html>

@@ -8,6 +8,7 @@ import string
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_mail import Mail, Message
 from flask import session
+import stat
 
 
 app = Flask(__name__)
@@ -341,7 +342,23 @@ def webhook():
 
 @app.route('/project/<project_name>')
 def load_project(project_name):
-    return render_template('index.html', project_name=project_name)
+    # Verificar si el usuario está logado
+    if 'user_email' not in session:
+        return redirect(url_for('login'))
+
+    user_email = session['user_email']
+
+    # Obtener el user_id desde el archivo 'users.json' basado en el email del usuario
+    with open(USERS_JSON, 'r', encoding='utf-8') as file:
+        users_data = json.load(file)
+        user_id = users_data.get(user_email)
+
+    if not user_id:
+        return redirect(url_for('login'))  # Si no se encuentra el user_id, redirigir al login
+
+    # Pasar el user_id y project_name a la plantilla
+    return render_template('index.html', user_id=user_id, project_name=project_name)
+
 
 @app.route('/api/projects')
 def list_projects():
@@ -357,6 +374,7 @@ def list_projects():
                         project_data = json.load(json_file)
                         projects.append({
                             "name": project_data.get("project_name"),
+                            "client": project_data.get("client"),
                             "description": project_data.get("project_description", ""),
                             "latitude": project_data.get("project_latitude", ""),
                             "longitude": project_data.get("project_longitude", ""),
@@ -372,6 +390,7 @@ def create_project():
         user_folder = get_user_folder()  # Carpeta del usuario logado
         data = request.json
         project_name = data.get('name')
+        client = data.get('client')
         description = data.get('description')
         latitude = data.get('latitude')
         longitude = data.get('longitude')
@@ -379,8 +398,11 @@ def create_project():
 
         if not os.path.exists(project_path):
             os.makedirs(project_path)
+
+            # Crear metadata.json
             project_metadata = {
                 "project_name": project_name,
+                "client": client,
                 "project_description": description,
                 "project_latitude": latitude,
                 "project_longitude": longitude,
@@ -391,11 +413,57 @@ def create_project():
             metadata_path = os.path.join(project_path, 'metadata.json')
             with open(metadata_path, 'w') as json_file:
                 json.dump(project_metadata, json_file, indent=4)
+
+            # Crear index.html por defecto
+            index_html_content = f"""
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{project_name} - Virtual Tour</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            background-color: #f9f9f9;
+        }}
+        h1 {{
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #333;
+        }}
+        p {{
+            font-size: 1.2em;
+            color: #555;
+        }}
+    </style>
+</head>
+<body>
+    <h1>Use o editor para começar a criação do Tour.</h1>
+    <p>Projeto: <strong>{project_name}</strong></p>
+</body>
+</html>
+"""
+
+            index_path = os.path.join(project_path, 'index.html')
+            with open(index_path, 'w', encoding='utf-8') as index_file:
+                index_file.write(index_html_content)
+
             return jsonify(success=True)
         else:
             return jsonify(success=False, message="O projeto já existe.")
     except Exception as e:
         return jsonify(success=False, message=str(e))
+
 
 @app.route('/api/delete-project', methods=['POST'])
 def delete_project():
@@ -430,16 +498,25 @@ def delete_project():
             # Intentar eliminar varias veces para manejar bloqueos ocasionales
             for _ in range(3):
                 try:
-                    shutil.rmtree(project_path)
+                    # Cambiar permisos para garantizar la eliminación
+                    for root, dirs, files in os.walk(project_path):
+                        for dir_ in dirs:
+                            os.chmod(os.path.join(root, dir_), stat.S_IWRITE)
+                        for file_ in files:
+                            os.chmod(os.path.join(root, file_), stat.S_IWRITE)
+
+                    shutil.rmtree(project_path)  # Intentar eliminar
+                    # Si se elimina correctamente, salir del bucle
                     return jsonify(success=True, message="Projeto eliminado com sucesso.")
                 except PermissionError as e:
-                    print(f"Tentando novamente: {str(e)}")
-                    continue  # Intenta nuevamente
+                    print(f"Tentando novamente por erro de permissão: {str(e)}")
+                    continue  # Reintentar
             return jsonify(success=False, message="Não foi possível excluir o projeto devido a um erro de permissão."), 500
         except Exception as e:
             return jsonify(success=False, message=f"Erro ao excluir o projeto: {str(e)}"), 500
     else:
         return jsonify(success=False, message="O projeto não existe."), 404
+
 
 
 
@@ -504,6 +581,7 @@ def update_project(project_name):
     return jsonify(success=True, message="Projeto atualizado corretamente.")
 
 
+from urllib.parse import unquote
 @app.route('/save-image', methods=['POST'])
 def save_image():
     user_email = session.get('user_email')
@@ -520,28 +598,51 @@ def save_image():
         if not user_id:
             return jsonify(success=False, message="Usuário não encontrado."), 404
 
-    # Crear la carpeta del proyecto si no existe
     folder_path = os.path.join(USERS_FOLDER, user_id, project_name)
     os.makedirs(folder_path, exist_ok=True)
 
-    # Procesar las imágenes
+    # Procesar imágenes nuevas
     files = request.files.getlist('image')
-    saved_files = []
     for file in files:
         if file and file.filename != '':
             file_path = os.path.join(folder_path, file.filename)
             file.save(file_path)
-            saved_files.append(file.filename)
-
-    if not saved_files:
-        return jsonify(success=False, message="Nenhuma imagem foi processada."), 400
 
     # Leer el tourConfig enviado desde el cliente
-    tour_config = json.loads(request.form.get('tourConfig'))
+    tour_config_raw = request.form.get('tourConfig')
+    if not tour_config_raw:
+        return jsonify(success=False, message="O tourConfig está vazio."), 400
 
-    # Actualizar solo los nombres de las imágenes en el tourConfig
+    try:
+        tour_config = json.loads(tour_config_raw)
+    except Exception:
+        return jsonify(success=False, message="Erro no formato do tourConfig."), 400
+
+    # Identificar imágenes referenciadas en el tourConfig
+    referenced_images = set()
     for scene_id, scene_data in tour_config['scenes'].items():
-        scene_data['panorama'] = scene_data['panorama'].split("\\")[-1]  # Solo guarda el nombre del archivo
+        blob_url = scene_data['panorama']
+        if "#" in blob_url:
+            _, encoded_name = blob_url.split("#")
+            file_name = unquote(encoded_name)  # Decodificar el nombre del archivo
+            scene_data['panorama'] = f"./{file_name}"
+            referenced_images.add(file_name)
+        else:
+            return jsonify(success=False, message=f"Formato inesperado para panorama na cena {scene_id}"), 400
+
+    # Eliminar imágenes no referenciadas, pero mantener archivos clave
+    existing_files = set(os.listdir(folder_path))
+    files_to_keep = referenced_images | {"tourConfig.json", "index.html", "metadata.json"}
+    files_to_remove = existing_files - files_to_keep
+    for file_name in files_to_remove:
+        file_path = os.path.join(folder_path, file_name)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    # Guardar el JSON (tourConfig) en la carpeta del proyecto
+    json_path = os.path.join(folder_path, 'tourConfig.json')
+    with open(json_path, 'w', encoding='utf-8') as json_file:
+        json.dump(tour_config, json_file, indent=4, ensure_ascii=False)
 
     # Generar el archivo HTML del visualizador
     create_viewer_html(folder_path, tour_config)
@@ -550,6 +651,7 @@ def save_image():
     viewer_url = url_for('static', filename=f'users/{user_id}/{project_name}/index.html', _external=True)
 
     return jsonify(success=True, message="Projeto salvo com sucesso.", viewer_url=viewer_url)
+
 
 
 def create_viewer_html(folder_path, tour_config):

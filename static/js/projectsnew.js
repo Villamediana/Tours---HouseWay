@@ -5,21 +5,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('create-project-btn').addEventListener('click', function () {
         const projectName = document.getElementById('project-name').value;
+        const projectClient = document.getElementById('project-client').value;
         const description = document.getElementById('description').value;
         const latitude = document.getElementById('latitude').value;
         const longitude = document.getElementById('longitude').value;
     
-        if (!projectName) {
-            notyf.error('Por favor, insira um nome para o projeto.');
+        if (!projectName || !projectClient) {
+            notyf.error('Por favor, insira um nome e um cliente para o projeto.');
             return;
         }
+        
     
         // Obtener todos los proyectos actuales en la UI
         const currentProjects = document.querySelectorAll('.project-card');
     
         // Solo verificar la cantidad de proyectos si NO estamos editando
         if (!editingProject) {
-            const userPlan = "teste"; // Cambiar según el plan real del usuario
+            const userPlan = "tesste"; // Cambiar según el plan real del usuario
             if (userPlan === "teste" && currentProjects.length >= 1) {
                 notyf.error('Seu plano só permite criar 1 projeto.');
                 setTimeout(() => {
@@ -39,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             body: JSON.stringify({
                 name: projectName,
+                client: projectClient,                
                 description: description,
                 latitude: latitude,
                 longitude: longitude,
@@ -57,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Actualiza los valores dentro del card
                         projectCard.querySelector('h3').textContent = projectName;
                         projectCard.dataset.name = projectName; // Actualizar el atributo para futuras búsquedas
+                        projectCard.querySelector('p').textContent = projectClient;
                         projectCard.setAttribute('title', description); // Actualizar el tooltip con la nueva descripción
     
                         // Aquí puedes actualizar otros detalles del card si es necesario
@@ -73,10 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Crear y añadir una nueva tarjeta si es un nuevo proyecto
                     addProjectCard({
                         name: projectName,
+                        client: projectClient,
                         description: description,
                         latitude: latitude,
                         longitude: longitude,
                     });
+                    updateNoProjectsMessage();
                 }
     
                 // Limpiar los campos del formulario
@@ -102,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function clearForm() {
         document.getElementById('project-name').value = '';
+        document.getElementById('project-client').value = '';
         document.getElementById('description').value = '';
         document.getElementById('latitude').value = '';
         document.getElementById('longitude').value = '';
@@ -113,19 +120,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('search-projects').addEventListener('input', function () {
         const searchTerm = this.value.toLowerCase();
         const projects = document.querySelectorAll('.project-card');
-
+    
         projects.forEach(project => {
             const projectName = project.querySelector('h3').textContent.toLowerCase();
-            if (projectName.includes(searchTerm)) {
+            const clientName = project.querySelector('p').textContent.toLowerCase(); // Cliente asociado
+    
+            // Mostrar el proyecto si el término coincide con el nombre o el cliente
+            if (projectName.includes(searchTerm) || clientName.includes(searchTerm)) {
                 project.style.display = '';
             } else {
                 project.style.display = 'none';
             }
         });
     });
+    
 
     function addProjectCard(project) {
         const projectName = project.name;
+        const projectClient = project.client;
         const projectDescription = project.description || 'Sem descrição disponível';
         const projectLatitude = project.latitude || '';
         const projectLongitude = project.longitude || '';
@@ -164,14 +176,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
         // Nombre del cliente
         const clientName = document.createElement('p');
-        clientName.textContent = "HouseWay"; // Valor estático
+        clientName.textContent = projectClient; // Valor estático
     
         // Crear la barra de progreso (opcional, si decides mantenerla)
         const progressBar = document.createElement('div');
         progressBar.classList.add('progress-bar');
     
         const progressSpan = document.createElement('span');
-        progressSpan.style.width = `0%`; // Por defecto
+        progressSpan.style.width = `100%`; // Por defecto
     
         progressBar.appendChild(progressSpan);
     
@@ -184,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         projectCard.addEventListener('click', () => {
             editingProject = projectName;
             document.getElementById('project-name').value = projectName;
+            document.getElementById('project-client').value = projectClient;
             document.getElementById('description').value = projectDescription;
             document.getElementById('latitude').value = projectLatitude;
             document.getElementById('longitude').value = projectLongitude;
@@ -212,6 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     projectWrapper.parentNode.removeChild(projectWrapper); // Eliminar de la UI
                 }
                 notyf.success('Projeto eliminado com sucesso.');
+                updateNoProjectsMessage();
             } else {
                 console.error('Error ao excluir o projeto:', data.message);
                 notyf.error(data.message || 'Erro ao excluir o projeto.');
@@ -231,8 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const noProjectsMessage = document.getElementById('no-projects-message');
     
                 if (projects.length === 0) {
-                    // Si no hay proyectos, muestra el mensaje
-                    noProjectsMessage.style.display = 'block';
+                    updateNoProjectsMessage();
                 } else {
                     // Si hay proyectos, oculta el mensaje y agrega las tarjetas
                     noProjectsMessage.style.display = 'none';
@@ -240,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Asegurarse de que los campos de imágenes y hotspots existan
                         const projectData = {
                             name: project.name,
+                            client: project.client,
                             description: project.description || '',
                             latitude: project.latitude || '',
                             longitude: project.longitude || '',
@@ -247,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             hotspots: project.hotspots || 0 // Número de hotspots
                         };
                         addProjectCard(projectData);
+                        updateNoProjectsMessage();
                     });
                 }
             })
@@ -288,6 +303,22 @@ menuItems.forEach(item => {
 
     // Cargar los proyectos al inicio
     fetchProjects();
-});
 
+    function updateNoProjectsMessage() {
+        const projectsContainer = document.getElementById('projects-container');
+        const noProjectsMessage = document.getElementById('no-projects-message');
+    
+        // Verificar si hay proyectos (excluyendo el mensaje mismo)
+        const hasProjects = Array.from(projectsContainer.children).some(
+            child => child !== noProjectsMessage
+        );
+    
+        if (hasProjects) {
+            noProjectsMessage.style.display = 'none'; // Ocultar mensaje
+        } else {
+            noProjectsMessage.style.display = 'block'; // Mostrar mensaje
+        }
+    }
+    
+});
 

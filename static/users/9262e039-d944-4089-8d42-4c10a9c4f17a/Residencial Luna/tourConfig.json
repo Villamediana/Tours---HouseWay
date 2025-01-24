@@ -1,0 +1,31 @@
+{
+    "default": {
+        "firstScene": "scene-1",
+        "author": "Residencial Luna",
+        "sceneFadeDuration": 1000
+    },
+    "scenes": {
+        "scene-1": {
+            "type": "equirectangular",
+            "panorama": "./11 - Copia.jpg",
+            "autoLoad": true,
+            "showControls": true,
+            "autoRotate": 0,
+            "hotSpotDebug": true,
+            "hfov": 120,
+            "hotSpots": [],
+            "pitch": -23.61550208646444,
+            "yaw": -110.2811479995238
+        },
+        "scene-2": {
+            "type": "equirectangular",
+            "panorama": "./22 - Copia.jpg",
+            "autoLoad": true,
+            "showControls": true,
+            "autoRotate": 0,
+            "hotSpotDebug": true,
+            "hfov": 120,
+            "hotSpots": []
+        }
+    }
+}

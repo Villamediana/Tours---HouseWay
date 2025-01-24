@@ -294,6 +294,11 @@ footer {
     display: none !important;
   }
 
+  .pnlm-panorama-info {
+    display: none !important;
+  }
+  
+
   
 #footer-left {
     display: flex;
@@ -311,6 +316,7 @@ footer {
     color: #a1a1aa;
     font-size: 1em;
     margin-left: 5px;
+    display: none;
 }
 
 .link{
@@ -518,9 +524,8 @@ footer {
     bottom: 20px;
     left: 15px;
     z-index: 10; /* Asegúrate de que esté encima del visor */
-    padding: 20px;
+    padding: 10px;
     font-size: 14px;
-    color: #fff;
     border: none;
     background-color: transparent; /* Azul estilo botón */
     cursor: pointer;
